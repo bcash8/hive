@@ -25,15 +25,16 @@ local partialStacks = {}
 local maxStackSizeMap = {}
 
 if fs.exists("data/maxStackSizeMap.txt") then
-  local file = fs.open("data/maxStackSizeMap.txt", "r")
+  local file = fs.open("hive/data/maxStackSizeMap.txt", "r")
   local contents = file.readAll()
   maxStackSizeMap = textutils.unserialise(contents)
   file.close()
 end
 
 local function addItemToMaxStackSizeMap(itemName, maxStackSize)
+  print(itemName)
   maxStackSizeMap[itemName] = maxStackSize
-  local file = fs.open("data/maxStackSizeMap.txt", "w")
+  local file = fs.open("hive/data/maxStackSizeMap.txt", "w")
   file.write(textutils.serialise(maxStackSizeMap))
   file.close()
 end

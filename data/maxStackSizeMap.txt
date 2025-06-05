@@ -1,0 +1,6 @@
+{
+  [ "minecraft:redstone" ] = 64,
+  [ "minecraft:iron_ingot" ] = 64,
+  [ "minecraft:oak_planks" ] = 64,
+  [ "minecraft:cobblestone" ] = 64,
+}
