@@ -112,7 +112,10 @@ function CraftingWorker:performTask()
     end
   end
 
-  local response = self:sendAndWait({ type = "return_materials", slots = slotsToReturn })
+  print(#slotsToReturn)
+  if self:returnMaterials(slotsToReturn) then
+    self:reportDone()
+  end
 
   self.status = "COMPLETE"
 end

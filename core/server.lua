@@ -42,6 +42,7 @@ function handlers.return_materials(_, message)
   if not source or not slots then return { type = "error", error = "Invalid parameters" } end
 
   for _, slot in pairs(slots) do
+    print(slot)
     storage.pullItemsIn(source, slot)
   end
 
@@ -53,6 +54,8 @@ local function handleMessage(id, message)
   if type(message) ~= "table" or not message.type then
     return { error = "Invalid message format" }
   end
+
+  print(message.type)
 
   local handler = handlers[message.type]
   if handler then

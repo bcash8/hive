@@ -24,7 +24,7 @@ local freeSlots = {}
 local partialStacks = {}
 local maxStackSizeMap = {}
 
-if fs.exists("data/maxStackSizeMap.txt") then
+if fs.exists("hive/data/maxStackSizeMap.txt") then
   local file = fs.open("hive/data/maxStackSizeMap.txt", "r")
   local contents = file.readAll()
   maxStackSizeMap = textutils.unserialise(contents)
@@ -32,7 +32,6 @@ if fs.exists("data/maxStackSizeMap.txt") then
 end
 
 local function addItemToMaxStackSizeMap(itemName, maxStackSize)
-  print(itemName)
   maxStackSizeMap[itemName] = maxStackSize
   local file = fs.open("hive/data/maxStackSizeMap.txt", "w")
   file.write(textutils.serialise(maxStackSizeMap))
@@ -237,6 +236,7 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
   return false
 end
 
+-- This won't work with turtles. need to update to have a staging chest before inserting to main inventory
 function StorageManager.pullItemsIn(source, sourceSlot, count)
   local itemDetail = peripheral.call(source, "getItemDetail", sourceSlot)
   if not itemDetail then return true end

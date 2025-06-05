@@ -8,22 +8,18 @@ local function topologicalSort(tasks)
   local sorted = {}
   local visited = {}
 
-  local taskMap = {}
-  for _, task in ipairs(tasks) do
-    taskMap[task.tempId] = task
-  end
-
   local function visit(task)
-    if visited[task.tempId] then return end
-    visited[task.tempId] = true
-    for _, prereqId in ipairs(task.prereqsTemp or {}) do
-      visit(taskMap[prereqId])
+    print(task.id)
+    if visited[task.id] then return end
+    visited[task.id] = true
+    for _, prereqId in ipairs(task.prereqs or {}) do
+      visit(tasks[prereqId])
     end
 
     table.insert(sorted, task)
   end
 
-  for _, task in ipairs(tasks) do
+  for _, task in pairs(tasks) do
     visit(task)
   end
 
@@ -36,24 +32,61 @@ end
 ---@param state any
 ---@return string, string | nil "CRAFT,STORAGE,FAIL", error
 local function planRecursive(itemName, amount, parentId, state)
-  local itemsInStorage = storage.countItem(itemName)
-  local itemsToCraft = amount - itemsInStorage
+  local available = storage.countItem(itemName)
+  local toCraft = math.max(0, amount - available)
 
-  -- The item is in storage, we just need to lock it for the parent crafting task
-  if itemsToCraft <= 0 then
-    table.insert(state.locks, {taskId = parentId, itemName= itemName, amount = amount})
+  -- Lock available items (even if partial)
+  if available > 0 then
+    table.insert(state.locks, {
+      taskId = parentId,
+      itemName = itemName,
+      amount = math.min(available, amount)
+    })
+  end
+
+  if toCraft <= 0 then
     return "STORAGE", nil
   end
-  
-  -- Lock the items that we do have in storage, then craft the rest.
-  table.insert(state.locks, {taskId = parentId, itemName = itemName, amount = itemsInStorage})
 
+  -- Need to craft the rest
   local recipe = recipeBook.get(itemName)
-  local neededIngredients = {}
-  for slot, char in pairs(recipe.inputs) do
-    -- neededIngredients[recipe.]
+  if not recipe then
+    return "FAIL", "No recipe for item: " .. itemName
   end
 
+
+  local taskId = taskQ.generateId()
+  local task = {
+    id = taskId,
+    prereqs = {},
+    work = {
+      type = "CRAFT",
+      count = toCraft,
+      recipe = recipe
+    }
+  }
+
+  state.tasks[taskId] = task
+
+  -- Link this task to its parent
+  if parentId and state.tasks[parentId] then
+    table.insert(state.tasks[parentId].prereqs, taskId)
+  end
+
+  local ingredientsPerCraft = {}
+  for _, char in pairs(recipe.inputs) do
+    local ingredientName = recipe.ingredients[char]
+    if ingredientName == nil then error("Unknown ingredient in recipe: " .. itemName) end
+    ingredientsPerCraft[ingredientName] = (ingredientsPerCraft[ingredientName] or 0) + 1
+  end
+
+  for ingredient, count in pairs(ingredientsPerCraft) do
+    local ingredientsNeeded = count * toCraft
+    local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
+    if status == "FAIL" then
+      return "FAIL", error
+    end
+  end
 
   return "CRAFT", nil
 end
@@ -64,22 +97,35 @@ end
 ---@param amount number
 function CraftingSystem.request(itemName, amount)
   local state = {
-    toLock = {},
+    locks = {},
     tasks = {}
   }
+
   local rootId = taskQ.generateId()
+  state.tasks[rootId] = { id = rootId, prereqs = {}, work = { type = "ROOT" } }
 
   local status, error = planRecursive(itemName, amount, rootId, state)
-  if error then 
+  if error then
     return false, error
   end
 
-  if status == "CRAFT" then
-    -- Add the tasks
+  if status == "STORAGE" then
     return true
   end
 
-  return false, nil
+  local sortedTasks = topologicalSort(state.tasks)
+
+  for _, lock in pairs(state.locks) do
+    storage.lockItem(lock.itemName, lock.amount, lock.taskId)
+  end
+
+  for _, task in pairs(sortedTasks) do
+    if task.work.type ~= "ROOT" then
+      taskQ.addTask(task)
+    end
+  end
+
+  return true
 end
 
 return CraftingSystem

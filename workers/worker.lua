@@ -58,8 +58,14 @@ function Worker:receive(timeout)
 end
 
 function Worker:requestMaterials(materials)
-  self:send({ type = "request_materials", materials = materials, location = PERIPHERAL_NAME, workerId = self.id, taskId =
-  self.task.id })
+  self:send({
+    type = "request_materials",
+    materials = materials,
+    location = PERIPHERAL_NAME,
+    workerId = self.id,
+    taskId =
+        self.task.id
+  })
   local response = self:receive(10)
   if response and response.type == "materials_delivered" then
     print("[Worker] Materials received")
@@ -69,13 +75,19 @@ function Worker:requestMaterials(materials)
 end
 
 function Worker:returnMaterials(slots)
-  self:send({ type = "request_materials", slots = slots, location = PERIPHERAL_NAME, workerId = self.id })
+  self:send({ type = "return_materials", slots = slots, location = PERIPHERAL_NAME, workerId = self.id })
   local response = self:receive(10)
   if response and response.type == "materials_returned" then
     print("[Worker] Materials returned")
     return true
   end
   return false
+end
+
+function Worker:reportDone()
+  if not self.task then return true end
+  local response = self:sendAndWait({ type = "report_done", taskId = self.task.id }, 10)
+  return response
 end
 
 function Worker:scanInventory()
