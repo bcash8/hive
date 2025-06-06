@@ -3,10 +3,10 @@ Worker.__index = Worker
 
 local SERVER_ID = 2
 local PROTOCOL = "crafter_worker"
-local SIDE = "RIGHT"
+local MODEM_SIDE = "RIGHT"
 local PERIPHERAL_NAME = "turtle_8"
 
-rednet.open(SIDE)
+rednet.open(MODEM_SIDE)
 
 function Worker.new(id)
   local self = setmetatable({}, Worker)

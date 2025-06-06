@@ -1,8 +1,14 @@
 {
-  [ "minecraft:iron_ingot" ] = 64,
-  [ "minecraft:cobblestone" ] = 64,
-  [ "minecraft:redstone" ] = 64,
+  [ "minecraft:stick" ] = 64,
+  [ "minecraft:oak_log" ] = 64,
+  [ "minecraft:tripwire_hook" ] = 64,
   [ "minecraft:oak_planks" ] = 64,
   [ "minecraft:black_wool" ] = 64,
-  [ "minecraft:oak_log" ] = 64,
+  [ "minecraft:iron_ingot" ] = 64,
+  [ "minecraft:trapped_chest" ] = 64,
+  [ "minecraft:cobblestone" ] = 64,
+  [ "minecraft:chest" ] = 64,
+  [ "minecraft:piston" ] = 64,
+  [ "minecraft:iron_pickaxe" ] = 1,
+  [ "minecraft:redstone" ] = 64,
 }

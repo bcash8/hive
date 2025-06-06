@@ -23,8 +23,10 @@ function TaskQueue.addTask(task)
   task.ready = (#task.prereqs == 0)
   tasks[task.id] = task
 
-  if task.ready then table.insert(readyQueue, task.id) end
-  print(task)
+  if task.ready then
+    readyQueue[task.work.type] = readyQueue[task.work.type] or {}
+    table.insert(readyQueue[task.work.type], task.id)
+  end
   return task.id
 end
 
@@ -33,6 +35,7 @@ function TaskQueue.markDone(taskId)
   if not task then return end
 
   for _, depId in ipairs(task.dependents or {}) do
+    print(depId)
     local depTask = tasks[depId]
     local newPrereqs = {}
     for _, d in ipairs(depTask.prereqs) do
@@ -42,22 +45,23 @@ function TaskQueue.markDone(taskId)
 
     if #depTask.prereqs == 0 then
       depTask.ready = true
-      table.insert(readyQueue, depTask.id)
+      readyQueue[depTask.work.type] = readyQueue[depTask.work.type] or {}
+      table.insert(readyQueue[depTask.work.type], depTask.id)
     end
   end
 end
 
-function TaskQueue.hasWork()
-  return #readyQueue > 0
+function TaskQueue.hasWork(workType)
+  return #readyQueue[workType] > 0
 end
 
-function TaskQueue.length()
-  return #readyQueue
+function TaskQueue.length(workType)
+  return #readyQueue[workType]
 end
 
-function TaskQueue.getNextReadyTask()
-  if #readyQueue == 0 then return nil end
-  local id = table.remove(readyQueue, 1)
+function TaskQueue.getNextReadyTask(workType)
+  if not readyQueue[workType] or #readyQueue[workType] == 0 then return nil end
+  local id = table.remove(readyQueue[workType], 1)
   return tasks[id], id
 end
 

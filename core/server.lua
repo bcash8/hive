@@ -1,9 +1,10 @@
 local taskQ = require("core.queue")
 local storage = require("core.storage")
 local handlers = {}
+local peripheralMap = {}
 
 function handlers.request_task(_, message)
-  local task = taskQ.getNextReadyTask()
+  local task = taskQ.getNextReadyTask(message.workType)
   if task then
     return { type = "task", task = task }
   else
@@ -19,14 +20,18 @@ function handlers.report_done(_, message)
   return { type = "report_result", success = true }
 end
 
-function handlers.request_materials(_, message)
+function handlers.request_materials(senderId, message)
   local materials = message.materials
   if materials == nil then return { type = "error", error = "Missing materials list" } end
 
+  local location = peripheralMap[senderId]
+  if location == nil then
+    return { type = "failed_delivery" }
+  end
+
   local success = true
   for material, amount in pairs(materials) do
-    success = success and storage.moveItem(material, amount, message.location, message.taskId)
-    print(material, amount, success)
+    success = success and storage.moveItem(material, amount, location, message.taskId)
   end
 
   if success then
@@ -36,8 +41,8 @@ function handlers.request_materials(_, message)
   end
 end
 
-function handlers.return_materials(_, message)
-  local source = message.location
+function handlers.return_materials(senderId, message)
+  local source = peripheralMap[senderId]
   local slots = message.slots
   if not source or not slots then return { type = "error", error = "Invalid parameters" } end
 
@@ -49,13 +54,21 @@ function handlers.return_materials(_, message)
   return { type = "materials_returned" }
 end
 
+local function mapPeripaherals()
+  local list = peripheral.getNames()
+  for _, name in pairs(list) do
+    if peripheral.getType(name) == "turtle" then
+      local id = peripheral.call(name, "getID")
+      peripheralMap[id] = name
+    end
+  end
+end
+
 -- Generic message handler
 local function handleMessage(id, message)
   if type(message) ~= "table" or not message.type then
     return { error = "Invalid message format" }
   end
-
-  print(message.type)
 
   local handler = handlers[message.type]
   if handler then
@@ -71,6 +84,7 @@ end
 -- Server loop
 local function runServer(side)
   rednet.open(side)
+  mapPeripaherals()
   print("Task Queue Server running")
 
   while true do

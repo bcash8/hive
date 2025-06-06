@@ -5,8 +5,7 @@ local taskQ = require("core.queue")
 storage.scanAll()
 
 local function main()
-  storage.moveItem("minecraft:black_wool", 30, "minecraft:chest_60")
-  crafter.request("minecraft:piston", 64)
+  crafter.request("minecraft:trapped_chest", 10)
   taskQ.log()
 end
 

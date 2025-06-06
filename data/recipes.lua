@@ -1,5 +1,5 @@
 return {
-  ["minecraft:sticks"] = {
+  ["minecraft:stick"] = {
     output = 4,
     inputs = {
       [2] = "a",
@@ -16,6 +16,44 @@ return {
     },
     ingredients = {
       ["a"] = "minecraft:oak_log"
+    }
+  },
+  ["minecraft:iron_pickaxe"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [2] = "a",
+      [3] = "a",
+      [6] = "b",
+      [10] = "b",
+    },
+    ingredients = {
+      ["a"] = "minecraft:iron_ingot",
+      ["b"] = "minecraft:stick",
+    }
+  },
+  ["minecraft:tripwire_hook"] = {
+    output = 2,
+    inputs = {
+      [1] = "a",
+      [5] = "b",
+      [9] = "c",
+    },
+    ingredients = {
+      ["a"] = "minecraft:iron_ingot",
+      ["b"] = "minecraft:stick",
+      ["c"] = "minecraft:oak_planks",
+    }
+  },
+  ["minecraft:trapped_chest"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [2] = "b",
+    },
+    ingredients = {
+      ["a"] = "minecraft:tripwire_hook",
+      ["b"] = "minecraft:chest"
     }
   },
   ["minecraft:chest"] = {

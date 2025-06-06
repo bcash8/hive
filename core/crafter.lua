@@ -32,8 +32,16 @@ end
 ---@param state any
 ---@return string, string | nil "CRAFT,STORAGE,FAIL", error
 local function planRecursive(itemName, amount, parentId, state)
-  local available = storage.countItem(itemName)
+  local alreadyLocked = 0
+  for _, lock in pairs(state.locks) do
+    if lock.itemName == itemName then
+      alreadyLocked = alreadyLocked + lock.amount
+    end
+  end
+
+  local available = math.max(0, storage.countItem(itemName) - alreadyLocked)
   local toCraft = math.max(0, amount - available)
+  print(itemName, available, amount, toCraft)
 
   -- Lock available items (even if partial)
   if available > 0 then
@@ -59,6 +67,7 @@ local function planRecursive(itemName, amount, parentId, state)
   local task = {
     id = taskId,
     prereqs = {},
+    dependents = { parentId },
     work = {
       type = "CRAFT",
       count = toCraft,
@@ -81,12 +90,19 @@ local function planRecursive(itemName, amount, parentId, state)
   end
 
   for ingredient, count in pairs(ingredientsPerCraft) do
-    local ingredientsNeeded = count * toCraft
+    local ingredientsNeeded = math.ceil((count * toCraft) / recipe.output)
     local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
     if status == "FAIL" then
       return "FAIL", error
     end
   end
+
+  -- Lock the to-be crafted items for the parent
+  table.insert(state.locks, {
+    taskId = parentId,
+    itemName = itemName,
+    amount = toCraft
+  })
 
   return "CRAFT", nil
 end
@@ -102,11 +118,12 @@ function CraftingSystem.request(itemName, amount)
   }
 
   local rootId = taskQ.generateId()
-  state.tasks[rootId] = { id = rootId, prereqs = {}, work = { type = "ROOT" } }
+  state.tasks[rootId] = { id = rootId, prereqs = {}, work = { type = "CRAFT_ROOT" }, dependents = {} }
 
-  local status, error = planRecursive(itemName, amount, rootId, state)
-  if error then
-    return false, error
+  local status, err = planRecursive(itemName, amount, rootId, state)
+  print(status, err)
+  if err then
+    return false, err
   end
 
   if status == "STORAGE" then
@@ -120,9 +137,7 @@ function CraftingSystem.request(itemName, amount)
   end
 
   for _, task in pairs(sortedTasks) do
-    if task.work.type ~= "ROOT" then
-      taskQ.addTask(task)
-    end
+    taskQ.addTask(task)
   end
 
   return true

@@ -3,6 +3,8 @@ local CraftingWorker = {}
 CraftingWorker.__index = CraftingWorker
 setmetatable(CraftingWorker, { __index = Worker })
 
+local WORK_TYPE = "CRAFT"
+
 function CraftingWorker.new(id)
   local self = setmetatable(Worker.new(id), CraftingWorker)
   return self
@@ -121,7 +123,7 @@ function CraftingWorker:performTask()
 end
 
 function CraftingWorker:requestTask()
-  local response = self:sendAndWait({ type = "request_task" })
+  local response = self:sendAndWait({ type = "request_task", workType = WORK_TYPE })
   if response and response.type == "task" then
     print(response.task.id)
     self.task = response.task

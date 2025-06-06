@@ -23,6 +23,7 @@ local lockTable = {}
 local freeSlots = {}
 local partialStacks = {}
 local maxStackSizeMap = {}
+local BUFFER_INVENTORY = "minecraft:barrel_9"
 
 if fs.exists("hive/data/maxStackSizeMap.txt") then
   local file = fs.open("hive/data/maxStackSizeMap.txt", "r")
@@ -108,7 +109,7 @@ function StorageManager.countItem(itemName, taskId)
 end
 
 function StorageManager.lockItem(itemName, count, taskId)
-  print(itemName, count, taskId)
+  print("[STORAGE]: Locking Items:", itemName, count, taskId)
   if StorageManager.countItem(itemName) < count then
     return false
   end
@@ -167,8 +168,8 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       or inventoryCache[itemName].locations == nil
       or StorageManager.countItem(itemName, taskId) < count
   then
-    print(taskId)
-    print(count, StorageManager.countItem(itemName, taskId))
+    print("[STORAGE] TaskId: " ..
+      taskId .. " requesting: " .. count .. " available: " .. StorageManager.countItem(itemName, taskId))
     return false
   end
 
@@ -204,7 +205,6 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       end
     end
   end
-  print("After partial")
 
   -- Continue to full stacks
   for inventoryName, slots in pairs(inventoryCache[itemName].locations or {}) do
@@ -231,18 +231,28 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       end
     end
   end
-  print("After full")
 
   return false
 end
 
 -- This won't work with turtles. need to update to have a staging chest before inserting to main inventory
 function StorageManager.pullItemsIn(source, sourceSlot, count)
-  local itemDetail = peripheral.call(source, "getItemDetail", sourceSlot)
-  if not itemDetail then return true end
+  local itemsMoved = peripheral.call(BUFFER_INVENTORY, "pullItems", source, sourceSlot, count)
+  StorageManager.emptyBufferChest()
+  return itemsMoved >= (count or 0)
+end
 
-  local itemName = itemDetail.name
-  local remaining = count or itemDetail.count
+function StorageManager.importItem(source, sourceSlot, itemName, count)
+  if not maxStackSizeMap[itemName] then
+    local detail = peripheral.call(source, "getItemDetail", sourceSlot)
+    if not detail then
+      print("[ERROR]: Unable to get max item count for item: " .. itemName)
+    end
+    addItemToMaxStackSizeMap(itemName, detail.maxCount)
+  end
+
+  local remaining = count
+  local maxStackSize = maxStackSizeMap[itemName] or 64
 
   -- Try stacking first
   if partialStacks[itemName] then
@@ -277,10 +287,10 @@ function StorageManager.pullItemsIn(source, sourceSlot, count)
         inventoryCache[itemName].locations[inventoryName][slot] = moved
 
         -- Setup partial stack tracker if needed
-        if moved < itemDetail.maxCount then
+        if moved < maxStackSize then
           partialStacks[itemName] = partialStacks[itemName] or {}
           partialStacks[itemName][inventoryName] = partialStacks[itemName][inventoryName] or {}
-          partialStacks[itemName][inventoryName][slot] = itemDetail.maxCount - moved
+          partialStacks[itemName][inventoryName][slot] = maxStackSize - moved
         end
 
         -- Remove from freeSlots
@@ -289,8 +299,13 @@ function StorageManager.pullItemsIn(source, sourceSlot, count)
       end
     end
   end
+end
 
-  return remaining <= 0
+function StorageManager.emptyBufferChest()
+  local list = peripheral.call(BUFFER_INVENTORY, "list")
+  for slot, item in pairs(list) do
+    StorageManager.importItem(BUFFER_INVENTORY, slot, item.name, item.count)
+  end
 end
 
 return StorageManager
