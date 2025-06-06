@@ -5,6 +5,7 @@ local SERVER_ID = 2
 local PROTOCOL = "crafter_worker"
 local MODEM_SIDE = "LEFT"
 local PERIPHERAL_NAME = "turtle_8"
+local WAITING_INDICATOR_SIDE = "top"
 
 rednet.open(MODEM_SIDE)
 
@@ -23,12 +24,14 @@ function Worker:send(message)
 end
 
 function Worker:sendAndWait(request, timeout, retires)
+  rs.setOutput(WAITING_INDICATOR_SIDE, true)
+  local result = nil
+
   for i = 1, retires or 3 do
     local requestId = tostring(math.random(1, 1e9))
     request.__requestId = requestId
 
     local done = false
-    local result = nil
 
     self.listeners[requestId] = function(message)
       result = message
@@ -45,9 +48,13 @@ function Worker:sendAndWait(request, timeout, retires)
       end
     end
 
+    if result then return result end
+
     self.listeners[requestId] = nil
-    return result
   end
+
+  rs.setOutput(WAITING_INDICATOR_SIDE, false)
+  return result
 end
 
 function Worker:receive(timeout)
