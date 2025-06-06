@@ -132,6 +132,7 @@ local function splitOversizedTasks(tasks)
           local actualAmount = math.min(outputAmount, remainingToCraft)
 
           local splitId = task.id .. "-" .. i
+          print(task.id, splitId)
           local splitTask = {
             id = splitId,
             work = {

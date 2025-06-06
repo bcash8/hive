@@ -23,7 +23,7 @@ function RecipeBook.addItemToMaxStackSizeMap(itemName, maxStackSize)
 end
 
 function RecipeBook.getMaxStackSize(itemName)
-  return maxStackSizeMap[itemName]
+  return maxStackSizeMap[itemName] or 64
 end
 
 return RecipeBook
