@@ -2,6 +2,8 @@ local taskQ = require("core.queue")
 local storage = require("core.storage")
 local handlers = {}
 local peripheralMap = {}
+local messageQueue = {}
+local MODEM_SIDE = "back"
 
 function handlers.request_task(_, message)
   local task = taskQ.getNextReadyTask(message.workType)
@@ -47,7 +49,6 @@ function handlers.return_materials(senderId, message)
   if not source or not slots then return { type = "error", error = "Invalid parameters" } end
 
   for _, slot in pairs(slots) do
-    print(slot)
     storage.pullItemsIn(source, slot)
   end
 
@@ -70,6 +71,10 @@ local function handleMessage(id, message)
     return { error = "Invalid message format" }
   end
 
+  if message.type ~= "request_task" then
+    print(id, message.type)
+  end
+
   local handler = handlers[message.type]
   if handler then
     local response = handler(id, message)
@@ -82,8 +87,20 @@ local function handleMessage(id, message)
 end
 
 -- Server loop
-local function runServer(side)
-  rednet.open(side)
+local function processMessages()
+  while true do
+    if #messageQueue > 0 then
+      local entry = table.remove(messageQueue, 1)
+      local response = handleMessage(entry.id, entry.message)
+      rednet.send(entry.id, response, entry.protocol)
+    else
+      sleep(0.5)
+    end
+  end
+end
+
+local function startListener()
+  rednet.open(MODEM_SIDE)
   mapPeripaherals()
   print("Task Queue Server running")
 
@@ -92,6 +109,10 @@ local function runServer(side)
     local response = handleMessage(id, message)
     rednet.send(id, response, protocol)
   end
+end
+
+local function runServer()
+  parallel.waitForAll(startListener, processMessages)
 end
 
 return { runServer = runServer }

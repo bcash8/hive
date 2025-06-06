@@ -35,7 +35,6 @@ function TaskQueue.markDone(taskId)
   if not task then return end
 
   for _, depId in ipairs(task.dependents or {}) do
-    print(depId)
     local depTask = tasks[depId]
     local newPrereqs = {}
     for _, d in ipairs(depTask.prereqs) do

@@ -9,7 +9,6 @@ local function topologicalSort(tasks)
   local visited = {}
 
   local function visit(task)
-    print(task.id)
     if visited[task.id] then return end
     visited[task.id] = true
     for _, prereqId in ipairs(task.prereqs or {}) do
@@ -41,7 +40,6 @@ local function planRecursive(itemName, amount, parentId, state)
 
   local available = math.max(0, storage.countItem(itemName) - alreadyLocked)
   local toCraft = math.max(0, amount - available)
-  print(itemName, available, amount, toCraft)
 
   -- Lock available items (even if partial)
   if available > 0 then
@@ -107,11 +105,12 @@ local function planRecursive(itemName, amount, parentId, state)
   return "CRAFT", nil
 end
 
-local function splitOversizedTasks(tasks)
+local function splitOversizedTasks(state)
   local newTasks = {}
+  local newLocks = {}
   local splitMap = {}
 
-  for _, task in pairs(tasks) do
+  for _, task in pairs(state.tasks) do
     if task.work and task.work.type == "CRAFT" then
       local recipe = task.work.recipe
       local count = task.work.count
@@ -132,7 +131,6 @@ local function splitOversizedTasks(tasks)
           local actualAmount = math.min(outputAmount, remainingToCraft)
 
           local splitId = task.id .. "-" .. i
-          print("TASKID", task.id, splitId)
           local splitTask = {
             id = splitId,
             work = {
@@ -183,7 +181,23 @@ local function splitOversizedTasks(tasks)
     task.dependents = newDependents[taskId] or {}
   end
 
-  return newTasks
+  -- Rewrite locks based on split splitMap
+  for _, lock in pairs(state.locks) do
+    if splitMap[lock.taskId] then
+      for _, sid in pairs(splitMap[lock.taskId]) do
+        local splitWork = newTasks[sid].work
+        table.insert(newLocks, {
+          taskId = sid,
+          itemName = lock.itemName,
+          amount = math.ceil(splitWork.count / splitWork.recipe.output)
+        })
+      end
+    else
+      table.insert(newLocks, lock)
+    end
+  end
+
+  return newTasks, newLocks
 end
 
 ---@param itemName string
@@ -207,10 +221,10 @@ function CraftingSystem.request(itemName, amount)
     return true
   end
 
-  local tasks = splitOversizedTasks(state.tasks)
+  local tasks, locks = splitOversizedTasks(state)
   local sortedTasks = topologicalSort(tasks)
 
-  for _, lock in pairs(state.locks) do
+  for _, lock in pairs(locks) do
     storage.lockItem(lock.itemName, lock.amount, lock.taskId)
   end
 

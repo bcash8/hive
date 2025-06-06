@@ -22,30 +22,32 @@ function Worker:send(message)
   rednet.send(SERVER_ID, message, PROTOCOL)
 end
 
-function Worker:sendAndWait(request, timeout)
-  local requestId = tostring(math.random(1, 1e9))
-  request.__requestId = requestId
+function Worker:sendAndWait(request, timeout, retires)
+  for i = 1, retires or 1 do
+    local requestId = tostring(math.random(1, 1e9))
+    request.__requestId = requestId
 
-  local done = false
-  local result = nil
+    local done = false
+    local result = nil
 
-  self.listeners[requestId] = function(message)
-    result = message
-    done = true
-  end
-
-  self:send(request)
-
-  local timer = os.startTimer(timeout or 5)
-  while not done do
-    local event, arg = os.pullEvent()
-    if event == "timer" and arg == timer then
-      break
+    self.listeners[requestId] = function(message)
+      result = message
+      done = true
     end
-  end
 
-  self.listeners[requestId] = nil
-  return result
+    self:send(request)
+
+    local timer = os.startTimer(timeout or 5)
+    while not done do
+      local event, arg = os.pullEvent()
+      if event == "timer" and arg == timer then
+        break
+      end
+    end
+
+    self.listeners[requestId] = nil
+    return result
+  end
 end
 
 function Worker:receive(timeout)
