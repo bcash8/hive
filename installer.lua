@@ -1,8 +1,19 @@
-local tArgs = { ... }
-local targetIndex = table.find(tArgs, "-t")
-local target = targetIndex and tArgs[targetIndex + 1] or "worker"
+local function findArg(args, key)
+  for i = 1, #args do
+    if args[i] == key then
+      return i
+    end
+  end
+  return nil
+end
 
-local base = "https://raw.githubusercontent.com/bcash8/hive/main/"
+local tArgs = { ... }
+local targetIndex = findArg(tArgs, '-t')
+local branchIndex = findArg(tArgs, '-b')
+local target = targetIndex and tArgs[targetIndex + 1] or "worker"
+local branch = branchIndex and tArgs[branchIndex + 1] or "main"
+
+local base = "https://raw.githubusercontent.com/bcash8/hive/" .. branch .. "/"
 
 local targets = {
   server = {
