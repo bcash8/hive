@@ -54,10 +54,14 @@ for _, path in ipairs(files) do
     fs.makeDir(dir)
   end
 
+  if fs.exists(dest) then
+    fs.delete(dest)
+  end
+
   -- Download the file
   local url = base .. path
   print("Installing " .. path .. " to " .. dest)
-  shell.run("wget", "-f", url, dest)
+  shell.run("wget", url, dest)
 end
 
 print("✅ Installation complete for: " .. target)
