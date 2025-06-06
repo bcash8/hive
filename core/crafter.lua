@@ -107,8 +107,84 @@ local function planRecursive(itemName, amount, parentId, state)
   return "CRAFT", nil
 end
 
--- TODO: replace this whole request system with a simplier more straight forward one that
--- only creates new task ids when an item needs to be crafted.
+local function splitOversizedTasks(tasks)
+  local newTasks = {}
+  local splitMap = {}
+
+  for _, task in pairs(tasks) do
+    if task.work and task.work.type == "CRAFT" then
+      local recipe = task.work.recipe
+      local count = task.work.count
+      local craftsNeeded = math.ceil(task.work.count / recipe.output)
+      local smallestStackSize = math.huge
+      for _, ingredient in pairs(recipe.ingredients) do
+        smallestStackSize = math.min(smallestStackSize, recipeBook.getMaxStackSize(ingredient))
+      end
+
+      local numberOfBatchesRequired = math.ceil(craftsNeeded / smallestStackSize)
+
+      if numberOfBatchesRequired > 1 then
+        splitMap[task.id] = {}
+        local remainingToCraft = count
+        for i = 1, numberOfBatchesRequired do
+          local craftsThisBatch = math.min(smallestStackSize, craftsNeeded - (i - 1) * smallestStackSize)
+          local outputAmount = craftsThisBatch * recipe.output
+          local actualAmount = math.min(outputAmount, remainingToCraft)
+
+          local splitId = task.id .. "-" .. i
+          local splitTask = {
+            id = splitId,
+            work = {
+              type = "CRAFT",
+              count = actualAmount,
+              recipe = recipe
+            },
+            prereqs = { unpack(task.prereqs or {}) },
+            dependents = {}
+          }
+
+          newTasks[splitId] = splitTask
+          table.insert(splitMap[task.id], splitId)
+          remainingToCraft = remainingToCraft - actualAmount
+        end
+      end
+    else
+      newTasks[task.id] = task
+    end
+  end
+
+  -- Rewire prereqs
+  for _, task in pairs(newTasks) do
+    if task.prereqs then
+      local newPrereqs = {}
+      for _, prereqId in pairs(task.prereqs) do
+        if splitMap[prereqId] then
+          for _, splitId in pairs(splitMap[prereqId]) do
+            table.insert(newPrereqs, splitId)
+          end
+        else
+          table.insert(newPrereqs, prereqId)
+        end
+      end
+      task.prereqs = newPrereqs
+    end
+  end
+
+  -- Rebuild dependents from scratch
+  local newDependents = {}
+  for _, task in pairs(newTasks) do
+    for _, prereqId in ipairs(task.prereqs or {}) do
+      newDependents[prereqId] = newDependents[prereqId] or {}
+      table.insert(newDependents[prereqId], task.id)
+    end
+  end
+  for taskId, task in pairs(newTasks) do
+    task.dependents = newDependents[taskId] or {}
+  end
+
+  return newTasks
+end
+
 ---@param itemName string
 ---@param amount number
 function CraftingSystem.request(itemName, amount)
@@ -130,7 +206,8 @@ function CraftingSystem.request(itemName, amount)
     return true
   end
 
-  local sortedTasks = topologicalSort(state.tasks)
+  local tasks = splitOversizedTasks(state.tasks)
+  local sortedTasks = topologicalSort(tasks)
 
   for _, lock in pairs(state.locks) do
     storage.lockItem(lock.itemName, lock.amount, lock.taskId)

@@ -1,3 +1,4 @@
+local recipeBook = require("core.recipe")
 local StorageManager = {}
 
 --[[
@@ -22,22 +23,7 @@ local inventoryCache = {}
 local lockTable = {}
 local freeSlots = {}
 local partialStacks = {}
-local maxStackSizeMap = {}
 local BUFFER_INVENTORY = "minecraft:barrel_9"
-
-if fs.exists("hive/data/maxStackSizeMap.txt") then
-  local file = fs.open("hive/data/maxStackSizeMap.txt", "r")
-  local contents = file.readAll()
-  maxStackSizeMap = textutils.unserialise(contents)
-  file.close()
-end
-
-local function addItemToMaxStackSizeMap(itemName, maxStackSize)
-  maxStackSizeMap[itemName] = maxStackSize
-  local file = fs.open("hive/data/maxStackSizeMap.txt", "w")
-  file.write(textutils.serialise(maxStackSizeMap))
-  file.close()
-end
 
 local function isStoragePeripheral(name)
   return peripheral.getType(name) == "minecraft:chest"
@@ -55,14 +41,14 @@ function StorageManager.scanAll()
         local item = items[slot]
         if item then
           -- Add the item to the maxStackSizeMap if it hasn't been seen before
-          if not maxStackSizeMap[item.name] then
+          if not recipeBook.getMaxStackSize(item.name) then
             local detail = chest.getItemDetail(slot)
             if detail then
-              addItemToMaxStackSizeMap(detail.name, detail.maxCount)
+              recipeBook.addItemToMaxStackSizeMap(detail.name, detail.maxCount)
             end
-            item.maxCount = maxStackSizeMap[item.name] or 0
+            item.maxCount = recipeBook.getMaxStackSize(item.name) or 0
           else
-            item.maxCount = maxStackSizeMap[item.name] or 0
+            item.maxCount = recipeBook.getMaxStackSize(item.name) or 0
           end
 
           if not inventoryCache[item.name] then
@@ -243,16 +229,16 @@ function StorageManager.pullItemsIn(source, sourceSlot, count)
 end
 
 function StorageManager.importItem(source, sourceSlot, itemName, count)
-  if not maxStackSizeMap[itemName] then
+  if not recipeBook.getMaxStackSize(itemName) then
     local detail = peripheral.call(source, "getItemDetail", sourceSlot)
     if not detail then
       print("[ERROR]: Unable to get max item count for item: " .. itemName)
     end
-    addItemToMaxStackSizeMap(itemName, detail.maxCount)
+    recipeBook.addItemToMaxStackSizeMap(itemName, detail.maxCount)
   end
 
   local remaining = count
-  local maxStackSize = maxStackSizeMap[itemName] or 64
+  local maxStackSize = recipeBook.getMaxStackSize(itemName) or 64
 
   -- Try stacking first
   if partialStacks[itemName] then
