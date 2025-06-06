@@ -117,7 +117,7 @@ local function splitOversizedTasks(state)
       local craftsNeeded = math.ceil(task.work.count / recipe.output)
       local smallestStackSize = math.huge
       for _, ingredient in pairs(recipe.ingredients) do
-        smallestStackSize = math.min(smallestStackSize, recipeBook.getMaxStackSize(ingredient))
+        smallestStackSize = math.min(smallestStackSize, recipeBook.getMaxStackSize(ingredient) or 64)
       end
 
       local numberOfBatchesRequired = math.ceil(craftsNeeded / smallestStackSize)

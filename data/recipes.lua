@@ -91,5 +91,44 @@ return {
       ["c"] = "minecraft:iron_ingot",
       ["d"] = "minecraft:redstone",
     }
-  }
+  },
+  ["minecraft:hopper"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [3] = "a",
+      [5] = "a",
+      [6] = "b",
+      [7] = "a",
+      [10] = "a",
+    },
+    ingredients = {
+      ["a"] = "minecraft:iron_ingot",
+      ["b"] = "minecraft:chest",
+    }
+  },
+  ["minecraft:minecart"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [3] = "a",
+      [5] = "a",
+      [6] = "a",
+      [7] = "a",
+    },
+    ingredients = {
+      ["a"] = "minecraft:iron_ingot",
+    }
+  },
+  ["minecraft:hopper_minecart"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [5] = "b",
+    },
+    ingredients = {
+      ["a"] = "minecraft:hopper",
+      ["b"] = "minecraft:minecart",
+    }
+  },
 }
