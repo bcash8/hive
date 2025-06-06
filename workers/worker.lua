@@ -23,7 +23,7 @@ function Worker:send(message)
 end
 
 function Worker:sendAndWait(request, timeout, retires)
-  for i = 1, retires or 1 do
+  for i = 1, retires or 3 do
     local requestId = tostring(math.random(1, 1e9))
     request.__requestId = requestId
 
