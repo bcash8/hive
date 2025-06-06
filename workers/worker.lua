@@ -48,7 +48,7 @@ function Worker:sendAndWait(request, timeout, retires)
       end
     end
 
-    if result then return result end
+    if result then break end
 
     self.listeners[requestId] = nil
   end
