@@ -3,7 +3,7 @@ Worker.__index = Worker
 
 local SERVER_ID = 2
 local PROTOCOL = "crafter_worker"
-local MODEM_SIDE = "RIGHT"
+local MODEM_SIDE = "LEFT"
 local PERIPHERAL_NAME = "turtle_8"
 
 rednet.open(MODEM_SIDE)
