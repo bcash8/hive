@@ -27,7 +27,7 @@ function Worker:sendAndWait(request, timeout, retires)
   rs.setOutput(WAITING_INDICATOR_SIDE, true)
   local result = nil
 
-  for i = 1, retires or 3 do
+  for i = 1, retires or 15 do
     local requestId = tostring(math.random(1, 1e9))
     request.__requestId = requestId
 
@@ -40,7 +40,7 @@ function Worker:sendAndWait(request, timeout, retires)
 
     self:send(request)
 
-    local timer = os.startTimer(timeout or 5)
+    local timer = os.startTimer(timeout or i)
     while not done do
       local event, arg = os.pullEvent()
       if event == "timer" and arg == timer then

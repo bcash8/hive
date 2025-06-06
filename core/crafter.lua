@@ -68,6 +68,7 @@ local function planRecursive(itemName, amount, parentId, state)
     dependents = { parentId },
     work = {
       type = "CRAFT",
+      item = itemName,
       count = toCraft,
       recipe = recipe
     }
@@ -115,7 +116,8 @@ local function splitOversizedTasks(state)
       local recipe = task.work.recipe
       local count = task.work.count
       local craftsNeeded = math.ceil(task.work.count / recipe.output)
-      local smallestStackSize = math.huge
+      local outputStackSize = recipeBook.getMaxStackSize(task.work.item)
+      local smallestStackSize = math.max(16, outputStackSize)
       for _, ingredient in pairs(recipe.ingredients) do
         smallestStackSize = math.min(smallestStackSize, recipeBook.getMaxStackSize(ingredient) or 64)
       end
@@ -135,6 +137,7 @@ local function splitOversizedTasks(state)
             id = splitId,
             work = {
               type = "CRAFT",
+              item = task.work.itemName,
               count = actualAmount,
               recipe = recipe
             },
