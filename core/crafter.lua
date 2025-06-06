@@ -132,7 +132,7 @@ local function splitOversizedTasks(tasks)
           local actualAmount = math.min(outputAmount, remainingToCraft)
 
           local splitId = task.id .. "-" .. i
-          print(task.id, splitId)
+          print("TASKID", task.id, splitId)
           local splitTask = {
             id = splitId,
             work = {
@@ -148,9 +148,9 @@ local function splitOversizedTasks(tasks)
           table.insert(splitMap[task.id], splitId)
           remainingToCraft = remainingToCraft - actualAmount
         end
+      else
+        newTasks[task.id] = task
       end
-    else
-      newTasks[task.id] = task
     end
   end
 
