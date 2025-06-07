@@ -46,8 +46,12 @@ function TaskQueue.markDone(taskId)
       depTask.ready = true
       readyQueue[depTask.work.type] = readyQueue[depTask.work.type] or {}
       table.insert(readyQueue[depTask.work.type], depTask.id)
+      if depTask.__onReady then depTask.__onReady() end
     end
   end
+
+  tasks[taskId] = nil
+  if task.__onFinish then task.__onFinish() end
 end
 
 function TaskQueue.hasWork(workType)

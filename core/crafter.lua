@@ -152,6 +152,8 @@ local function splitOversizedTasks(state)
       else
         newTasks[task.id] = task
       end
+    else
+      newTasks[task.id] = task
     end
   end
 
@@ -205,14 +207,22 @@ end
 
 ---@param itemName string
 ---@param amount number
-function CraftingSystem.request(itemName, amount)
+---@param onFinish function | nil
+function CraftingSystem.request(itemName, amount, onFinish)
   local state = {
     locks = {},
     tasks = {}
   }
 
   local rootId = taskQ.generateId()
-  state.tasks[rootId] = { id = rootId, prereqs = {}, work = { type = "CRAFT_ROOT" }, dependents = {} }
+  state.tasks[rootId] = {
+    id = rootId,
+    prereqs = {},
+    work = { type = "CRAFT_ROOT" },
+    dependents = {},
+    __onFinish = onFinish,
+    __onReady = function() taskQ.markDone(rootId) end
+  }
 
   local status, err = planRecursive(itemName, amount, rootId, state)
   print(status, err)

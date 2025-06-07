@@ -1,12 +1,12 @@
 local storage = require("core.storage")
 local crafter = require("core.crafter")
 local server = require("core.server")
-local taskQ = require("core.queue")
 storage.scanAll()
 
 local function main()
-  crafter.request("minecraft:trapped_chest", 10)
-  taskQ.log()
+  crafter.request("minecraft:piston", 3456, function() print("Crafting complete minecraft:piston") end)
+  crafter.request("minecraft:iron_pickaxe", 54, function() print("Crafting complete minecraft:iron_pickaxe") end)
+  crafter.request("minecraft:stick", 64, function() print("Crafting complete minecraft:stick") end)
 end
 
-parallel.waitForAll(function() server.runServer("back") end, main)
+parallel.waitForAll(function() server.runServer() end, main)

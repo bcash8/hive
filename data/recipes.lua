@@ -131,4 +131,38 @@ return {
       ["b"] = "minecraft:minecart",
     }
   },
+  ["minecraft:bow"] = {
+    output = 1,
+    inputs = {
+      [2] = "a",
+      [3] = "b",
+      [5] = "a",
+      [7] = "b",
+      [10] = "a",
+      [11] = "b",
+    },
+    ingredients = {
+      ["a"] = "minecraft:stick",
+      ["b"] = "minecraft:string",
+    }
+  },
+  ["minecraft:dispenser"] = {
+    output = 1,
+    inputs = {
+      [1] = "a",
+      [2] = "a",
+      [3] = "a",
+      [5] = "a",
+      [6] = "b",
+      [7] = "a",
+      [9] = "a",
+      [10] = "c",
+      [11] = "a",
+    },
+    ingredients = {
+      ["a"] = "minecraft:cobblestone",
+      ["b"] = "minecraft:bow",
+      ["c"] = "minecraft:redstone",
+    }
+  },
 }

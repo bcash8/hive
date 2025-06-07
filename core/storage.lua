@@ -174,6 +174,8 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       if actualMovedCount >= amount then
         slots[slot] = nil
         inventoryCache[itemName].locations[inventoryName][slot] = nil
+        freeSlots[inventoryName] = freeSlots[inventoryName] or {}
+        table.insert(freeSlots[inventoryName], slot)
       else
         slots[slot] = amount - actualMovedCount
         inventoryCache[itemName].locations[inventoryName][slot] = amount - actualMovedCount
@@ -204,8 +206,13 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       -- Update or remove the slot
       if actualMovedCount >= amount then
         slots[slot] = nil
+        freeSlots[inventoryName] = freeSlots[inventoryName] or {}
+        table.insert(freeSlots[inventoryName], slot)
       else
         slots[slot] = amount - actualMovedCount
+        partialStacks[itemName] = partialStacks[itemName] or {}
+        partialStacks[itemName][inventoryName] = partialStacks[itemName][inventoryName] or {}
+        partialStacks[itemName][inventoryName][slot] = recipeBook.getMaxStackSize(itemName) - actualMovedCount
       end
 
       if next(slots) == nil then
