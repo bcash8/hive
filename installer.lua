@@ -23,6 +23,7 @@ local targets = {
     "core/server.lua",
     "core/storage.lua",
     "data/recipes.json",
+    "data/recipePriority.json",
     "data/tags.json",
     "data/items.json",
     "main.lua",
