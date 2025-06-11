@@ -24,7 +24,8 @@ local targets = {
     "core/storage.lua",
     "data/recipes.lua",
     "data/maxStackSizeMap.txt",
-    "main.lua"
+    "main.lua",
+    "packages/json.lua"
   },
   worker = {
     "workers/crafter.lua",
