@@ -6,40 +6,40 @@ local recipes = {}
 local itemRecipes = {}
 local tags = {}
 
-if fs.exists("data/items.json") then
-  local file = fs.open("data/items.json", "r")
+if fs.exists("hive/server/data/items.json") then
+  local file = fs.open("hive/server/data/items.json", "r")
   local contents = file.readAll()
   items = json.decode(contents)
   file.close()
 else
-  error("Missing data/items.json file.")
+  error("Missing hive/server/data/items.json file.")
 end
 
-if fs.exists("data/recipes.json") then
-  local file = fs.open("data/recipes.json", "r")
+if fs.exists("hive/server/data/recipes.json") then
+  local file = fs.open("hive/server/data/recipes.json", "r")
   local contents = file.readAll()
   recipes = json.decode(contents)
   file.close()
 else
-  error("Missing data/recipes.json file.")
+  error("Missing hive/server/data/recipes.json file.")
 end
 
-if fs.exists("data/tags.json") then
-  local file = fs.open("data/tags.json", "r")
+if fs.exists("hive/server/data/tags.json") then
+  local file = fs.open("hive/server/data/tags.json", "r")
   local contents = file.readAll()
   tags = json.decode(contents)
   file.close()
 else
-  error("Missing data/tags.json file.")
+  error("Missing hive/server/data/tags.json file.")
 end
 
-if fs.exists("data/recipePriority.json") then
-  local file = fs.open("data/recipePriority.json", "r")
+if fs.exists("hive/server/data/recipePriority.json") then
+  local file = fs.open("hive/server/data/recipePriority.json", "r")
   local contents = file.readAll()
   itemRecipes = json.decode(contents)
   file.close()
 else
-  error("Missing data/recipePriority.json file.")
+  error("Missing hive/server/data/recipePriority.json file.")
 end
 
 function RecipeBook.getRecipes(itemName)
@@ -56,12 +56,13 @@ function RecipeBook.addItemToItemsMap(item)
     displayName = item.displayName,
     stackSize = item.maxCount
   }
-  local file = fs.open("data/items.json", "w")
+  local file = fs.open("hive/server/data/items.json", "w")
   file.write(json.encode(items))
   file.close()
 end
 
 function RecipeBook.getStackSize(itemName)
+  if not items[itemName] then return nil end
   return items[itemName].stackSize
 end
 

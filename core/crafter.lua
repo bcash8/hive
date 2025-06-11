@@ -85,25 +85,32 @@ local function planRecursive(itemName, amount, parentId, state)
     local output = recipeBook.getOutput(recipeName)
     local ingredientsPerCraft = recipeBook.getRequiredIngredients(recipeName)
 
+    local recipeOk = true
     for ingredient, count in pairs(ingredientsPerCraft) do
+      -- TODO handle tags here. Like tag:minecraft:planks
       local ingredientsNeeded = math.ceil((count * toCraft) / output)
       local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
       if status == "FAIL" then
-        return "FAIL", error
+        recipeOk = false
+        break
       end
     end
 
-    -- Lock the to-be crafted items for the parent
-    table.insert(state.locks, {
-      taskId = parentId,
-      itemName = itemName,
-      amount = toCraft
-    })
+    if recipeOk then
+      -- Lock the to-be crafted items for the parent
+      table.insert(state.locks, {
+        taskId = parentId,
+        itemName = itemName,
+        amount = toCraft
+      })
 
-    task.work.recipeName = recipeName
+      task.work.recipeName = recipeName
 
-    return "CRAFT", nil
+      return "CRAFT", nil
+    end
   end
+
+  return "FAIL", "no recipe"
 end
 
 local function splitOversizedTasks(state)

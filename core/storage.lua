@@ -44,7 +44,7 @@ function StorageManager.scanAll()
           if not recipeBook.getStackSize(item.name) then
             local detail = chest.getItemDetail(slot)
             if detail then
-              recipeBook.addItemToMaxStackSizeMap(detail.name, detail.maxCount)
+              recipeBook.addItemToItemsMap(detail)
             end
             item.maxCount = recipeBook.getStackSize(item.name) or 0
           else
@@ -241,7 +241,7 @@ function StorageManager.importItem(source, sourceSlot, itemName, count)
     if not detail then
       print("[ERROR]: Unable to get max item count for item: " .. itemName)
     end
-    recipeBook.addItemToMaxStackSizeMap(itemName, detail.maxCount)
+    recipeBook.addItemToItemsMap(detail)
   end
 
   local remaining = count
