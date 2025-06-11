@@ -22,9 +22,9 @@ async function tagsToJSON() {
   const files = await fs.readdir(tagDir);
   for (const file of files) {
     const filePath = path.join(tagDir, file);
-    const tagName = path.basename(file, ".json");
+    const taggedTagName = `minecraft:${path.basename(file, ".json")}`;
     const data = await fs.readFile(filePath, "utf8");
-    tagsData[tagName] = JSON.parse(data);
+    tagsData[taggedTagName] = JSON.parse(data);
   }
 
   return tagsData;
