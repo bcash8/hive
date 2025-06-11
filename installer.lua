@@ -22,10 +22,9 @@ local targets = {
     "core/recipe.lua",
     "core/server.lua",
     "core/storage.lua",
-    "data/recipes.lua",
     "data/recipes.json",
     "data/tags.json",
-    "data/maxStackSizeMap.txt",
+    "data/items.json",
     "main.lua",
     "packages/json.lua"
   },

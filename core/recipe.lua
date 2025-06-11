@@ -3,8 +3,8 @@ local recipes = require("data.recipes")
 local RecipeBook = {}
 local maxStackSizeMap = {}
 
-if fs.exists("hive/data/maxStackSizeMap.txt") then
-  local file = fs.open("hive/data/maxStackSizeMap.txt", "r")
+if fs.exists("data/maxStackSizeMap.txt") then
+  local file = fs.open("data/maxStackSizeMap.txt", "r")
   local contents = file.readAll()
   maxStackSizeMap = textutils.unserialise(contents)
   file.close()
@@ -17,7 +17,7 @@ end
 
 function RecipeBook.addItemToMaxStackSizeMap(itemName, maxStackSize)
   maxStackSizeMap[itemName] = maxStackSize
-  local file = fs.open("hive/data/maxStackSizeMap.txt", "w")
+  local file = fs.open("data/maxStackSizeMap.txt", "w")
   file.write(textutils.serialise(maxStackSizeMap))
   file.close()
 end
