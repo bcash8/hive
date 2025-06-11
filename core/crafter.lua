@@ -201,10 +201,11 @@ local function splitOversizedTasks(state)
     if splitMap[lock.taskId] then
       for _, sid in pairs(splitMap[lock.taskId]) do
         local splitWork = newTasks[sid].work
+        local splitWorkOutput = recipeBook.getOutput(splitWork.recipeName)
         table.insert(newLocks, {
           taskId = sid,
           itemName = lock.itemName,
-          amount = math.ceil(splitWork.count / splitWork.recipe.output)
+          amount = math.ceil(splitWork.count / splitWorkOutput)
         })
       end
     else
@@ -252,7 +253,7 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
-    print(textutils.serialise(task))
+    print(task.id, textutils.serialise(task.work), textutils.serialise(task.prereqs))
     taskQ.addTask(task)
   end
 
