@@ -41,14 +41,14 @@ function StorageManager.scanAll()
         local item = items[slot]
         if item then
           -- Add the item to the maxStackSizeMap if it hasn't been seen before
-          if not recipeBook.getMaxStackSize(item.name) then
+          if not recipeBook.getStackSize(item.name) then
             local detail = chest.getItemDetail(slot)
             if detail then
               recipeBook.addItemToMaxStackSizeMap(detail.name, detail.maxCount)
             end
-            item.maxCount = recipeBook.getMaxStackSize(item.name) or 0
+            item.maxCount = recipeBook.getStackSize(item.name) or 0
           else
-            item.maxCount = recipeBook.getMaxStackSize(item.name) or 0
+            item.maxCount = recipeBook.getStackSize(item.name) or 0
           end
 
           if not inventoryCache[item.name] then
@@ -212,7 +212,7 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
         slots[slot] = amount - actualMovedCount
         partialStacks[itemName] = partialStacks[itemName] or {}
         partialStacks[itemName][inventoryName] = partialStacks[itemName][inventoryName] or {}
-        partialStacks[itemName][inventoryName][slot] = recipeBook.getMaxStackSize(itemName) - actualMovedCount
+        partialStacks[itemName][inventoryName][slot] = recipeBook.getStackSize(itemName) - actualMovedCount
       end
 
       if next(slots) == nil then
@@ -236,7 +236,7 @@ function StorageManager.pullItemsIn(source, sourceSlot, count)
 end
 
 function StorageManager.importItem(source, sourceSlot, itemName, count)
-  if not recipeBook.getMaxStackSize(itemName) then
+  if not recipeBook.getStackSize(itemName) then
     local detail = peripheral.call(source, "getItemDetail", sourceSlot)
     if not detail then
       print("[ERROR]: Unable to get max item count for item: " .. itemName)
@@ -245,7 +245,7 @@ function StorageManager.importItem(source, sourceSlot, itemName, count)
   end
 
   local remaining = count
-  local maxStackSize = recipeBook.getMaxStackSize(itemName) or 64
+  local maxStackSize = recipeBook.getStackSize(itemName) or 64
 
   -- Try stacking first
   if partialStacks[itemName] then

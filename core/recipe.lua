@@ -3,6 +3,7 @@ local json = require("packages.json")
 local RecipeBook = {}
 local items = {}
 local recipes = {}
+local itemRecipes = {}
 local tags = {}
 
 if fs.exists("data/items.json") then
@@ -32,8 +33,21 @@ else
   error("Missing data/tags.json file.")
 end
 
-function RecipeBook.get(itemName)
-  return recipes[itemName]
+if fs.exists("data/recipePriority.json") then
+  local file = fs.open("data/recipePriority.json", "r")
+  local contents = file.readAll()
+  itemRecipes = json.decode(contents)
+  file.close()
+else
+  error("Missing data/recipePriority.json file.")
+end
+
+function RecipeBook.getRecipes(itemName)
+  return itemRecipes[itemName]
+end
+
+function RecipeBook.get(recipeName)
+  return recipes[recipeName]
 end
 
 function RecipeBook.addItemToItemsMap(item)
@@ -47,8 +61,58 @@ function RecipeBook.addItemToItemsMap(item)
   file.close()
 end
 
-function RecipeBook.getMaxStackSize(itemName)
+function RecipeBook.getStackSize(itemName)
   return items[itemName].stackSize
+end
+
+-- Required Ingredients
+
+local function shapedCraftingRequiredIngredients(recipe)
+  local counts = {}
+  local symbolCount = {}
+  for _, row in ipairs(recipe.pattern) do
+    for i = 1, #row do
+      local symbol = row:sub(i, i)
+      if symbol ~= " " then
+        symbolCount[symbol] = (symbolCount[symbol] or 0) + 1
+      end
+    end
+  end
+
+  for symbol, count in pairs(symbolCount) do
+    local key = recipe.key[symbol]
+    if key then
+      local item = key.item or (key.tag and ("tag:" .. key.tag))
+      if item then
+        counts[item] = (counts[item] or 0) + count
+      end
+    end
+  end
+
+  return counts
+end
+
+function RecipeBook.getRequiredIngredients(recipeName)
+  local recipe = RecipeBook.get(recipeName)
+  if not recipe then error("Unknown recipe: " .. recipeName) end
+
+  if recipe.type == "minecraft:crafting_shaped" then
+    return shapedCraftingRequiredIngredients(recipe)
+  end
+
+  error("Unknown recipe type: " .. recipe.type)
+end
+
+-- Outputs
+
+function RecipeBook.getOutput(recipeName)
+  local recipe = RecipeBook.get(recipeName)
+  if not recipe then error("Unknown recipe: " .. recipeName) end
+
+  if recipe.count then return recipe.count end
+  if recipe.result then return recipe.result.count or 1 end
+
+  error("Unknown output amount: " .. recipeName)
 end
 
 return RecipeBook

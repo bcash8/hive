@@ -55,12 +55,6 @@ local function planRecursive(itemName, amount, parentId, state)
   end
 
   -- Need to craft the rest
-  local recipe = recipeBook.get(itemName)
-  if not recipe then
-    return "FAIL", "No recipe for item: " .. itemName
-  end
-
-
   local taskId = taskQ.generateId()
   local task = {
     id = taskId,
@@ -70,7 +64,7 @@ local function planRecursive(itemName, amount, parentId, state)
       type = "CRAFT",
       item = itemName,
       count = toCraft,
-      recipe = recipe
+      recipe = nil -- We will set this to the recipe that is picked further down
     }
   }
 
@@ -81,29 +75,35 @@ local function planRecursive(itemName, amount, parentId, state)
     table.insert(state.tasks[parentId].prereqs, taskId)
   end
 
-  local ingredientsPerCraft = {}
-  for _, char in pairs(recipe.inputs) do
-    local ingredientName = recipe.ingredients[char]
-    if ingredientName == nil then error("Unknown ingredient in recipe: " .. itemName) end
-    ingredientsPerCraft[ingredientName] = (ingredientsPerCraft[ingredientName] or 0) + 1
+  local allRecipes = recipeBook.getRecipes(itemName)
+  if not allRecipes then
+    return "FAIL", "No recipe for item: " .. itemName
   end
 
-  for ingredient, count in pairs(ingredientsPerCraft) do
-    local ingredientsNeeded = math.ceil((count * toCraft) / recipe.output)
-    local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
-    if status == "FAIL" then
-      return "FAIL", error
+  -- Loop through the recipes for this item to see if any can be crafted.
+  for _, recipeName in pairs(allRecipes) do
+    local output = recipeBook.getOutput(recipeName)
+    local ingredientsPerCraft = recipeBook.getRequiredIngredients(recipeName)
+
+    for ingredient, count in pairs(ingredientsPerCraft) do
+      local ingredientsNeeded = math.ceil((count * toCraft) / output)
+      local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
+      if status == "FAIL" then
+        return "FAIL", error
+      end
     end
+
+    -- Lock the to-be crafted items for the parent
+    table.insert(state.locks, {
+      taskId = parentId,
+      itemName = itemName,
+      amount = toCraft
+    })
+
+    task.work.recipeName = recipeName
+
+    return "CRAFT", nil
   end
-
-  -- Lock the to-be crafted items for the parent
-  table.insert(state.locks, {
-    taskId = parentId,
-    itemName = itemName,
-    amount = toCraft
-  })
-
-  return "CRAFT", nil
 end
 
 local function splitOversizedTasks(state)
@@ -113,13 +113,16 @@ local function splitOversizedTasks(state)
 
   for _, task in pairs(state.tasks) do
     if task.work and task.work.type == "CRAFT" then
-      local recipe = task.work.recipe
+      local recipeName = task.work.recipeName
+      local output = recipeBook.getOutput(recipeName)
       local count = task.work.count
-      local craftsNeeded = math.ceil(task.work.count / recipe.output)
-      local outputStackSize = recipeBook.getMaxStackSize(task.work.item)
+      local craftsNeeded = math.ceil(task.work.count / output)
+      local outputStackSize = recipeBook.getStackSize(task.work.item)
       local smallestStackSize = math.max(16, outputStackSize)
-      for _, ingredient in pairs(recipe.ingredients) do
-        smallestStackSize = math.min(smallestStackSize, recipeBook.getMaxStackSize(ingredient) or 64)
+
+      local ingredientsPerCraft = recipeBook.getRequiredIngredients(recipeName)
+      for ingredient, _ in pairs(ingredientsPerCraft) do
+        smallestStackSize = math.min(smallestStackSize, recipeBook.getStackSize(ingredient) or 64)
       end
 
       local numberOfBatchesRequired = math.ceil(craftsNeeded / smallestStackSize)
@@ -129,7 +132,7 @@ local function splitOversizedTasks(state)
         local remainingToCraft = count
         for i = 1, numberOfBatchesRequired do
           local craftsThisBatch = math.min(smallestStackSize, craftsNeeded - (i - 1) * smallestStackSize)
-          local outputAmount = craftsThisBatch * recipe.output
+          local outputAmount = craftsThisBatch * output
           local actualAmount = math.min(outputAmount, remainingToCraft)
 
           local splitId = task.id .. "-" .. i
@@ -139,7 +142,7 @@ local function splitOversizedTasks(state)
               type = "CRAFT",
               item = task.work.itemName,
               count = actualAmount,
-              recipe = recipe
+              recipeName = recipeName
             },
             prereqs = { unpack(task.prereqs or {}) },
             dependents = {}
@@ -242,6 +245,7 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
+    print(textutils.serialise(task))
     taskQ.addTask(task)
   end
 
