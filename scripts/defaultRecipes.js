@@ -18,7 +18,7 @@ async function main() {
     const names = sorted.map((recipe) => recipe.recipeName);
     prioritizedRecipes[outputName] = names;
   }
-
+  console.log(prioritizedRecipes["minecraft:iron_ingot"]);
   return prioritizedRecipes;
 }
 
@@ -45,7 +45,7 @@ function sortRecipe(recipeA, recipeB) {
   const typeIndexA = preferedTypeOrder.indexOf(recipeA.type);
   const typeIndexB = preferedTypeOrder.indexOf(recipeB.type);
 
-  if (typeIndexA !== typeIndexB) return typeIndexB - typeIndexA;
+  if (typeIndexA !== typeIndexB) return typeIndexA - typeIndexB;
 
   // Step 2: Prefer recipes with fewer unique ingredients
   const ingredientCountA = Object.keys(recipeA.ingredients || {}).length;
