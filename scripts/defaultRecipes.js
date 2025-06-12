@@ -18,7 +18,7 @@ async function main() {
     const names = sorted.map((recipe) => recipe.recipeName);
     prioritizedRecipes[outputName] = names;
   }
-  console.log(prioritizedRecipes["minecraft:iron_ingot"]);
+
   return prioritizedRecipes;
 }
 
