@@ -87,6 +87,7 @@ local function planRecursive(itemName, amount, parentId, state)
 
     local recipeOk = true
     for ingredient, count in pairs(ingredientsPerCraft) do
+      print(ingredient)
       -- TODO handle tags here. Like tag:minecraft:planks
       local ingredientsNeeded = math.ceil((count * toCraft) / output)
       local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
@@ -147,7 +148,7 @@ local function splitOversizedTasks(state)
             id = splitId,
             work = {
               type = "CRAFT",
-              item = task.work.itemName,
+              item = task.work.item,
               count = actualAmount,
               recipeName = recipeName
             },
@@ -155,15 +156,26 @@ local function splitOversizedTasks(state)
             dependents = {}
           }
 
+          for ingredient, amount in pairs(ingredientsPerCraft) do
+            print(ingredient, amount)
+            table.insert(newLocks, {
+              taskId = splitId,
+              itemName = ingredient,
+              amount = amount * actualAmount
+            })
+          end
+
           newTasks[splitId] = splitTask
           table.insert(splitMap[task.id], splitId)
           remainingToCraft = remainingToCraft - actualAmount
         end
       else
         newTasks[task.id] = task
+        table.insert(newLocks, state.locks[task.id])
       end
     else
       newTasks[task.id] = task
+      table.insert(newLocks, state.locks[task.id])
     end
   end
 
@@ -194,23 +206,6 @@ local function splitOversizedTasks(state)
   end
   for taskId, task in pairs(newTasks) do
     task.dependents = newDependents[taskId] or {}
-  end
-
-  -- Rewrite locks based on split splitMap
-  for _, lock in pairs(state.locks) do
-    if splitMap[lock.taskId] then
-      for _, sid in pairs(splitMap[lock.taskId]) do
-        local splitWork = newTasks[sid].work
-        local splitWorkOutput = recipeBook.getOutput(splitWork.recipeName)
-        table.insert(newLocks, {
-          taskId = sid,
-          itemName = lock.itemName,
-          amount = math.ceil(splitWork.count / splitWorkOutput)
-        })
-      end
-    else
-      table.insert(newLocks, lock)
-    end
   end
 
   return newTasks, newLocks
@@ -253,7 +248,6 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
-    print(task.id, textutils.serialise(task.work), textutils.serialise(task.prereqs))
     taskQ.addTask(task)
   end
 
