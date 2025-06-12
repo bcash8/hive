@@ -30,7 +30,9 @@ end
 ---@params parentId string
 ---@param state any
 ---@return string, string | nil "CRAFT,STORAGE,FAIL", error
-local function planRecursive(itemName, amount, parentId, state)
+local function planRecursive(itemName, amount, parentId, state, visited)
+  visited = visited or {}
+
   local alreadyLocked = 0
   for _, lock in pairs(state.locks) do
     if lock.itemName == itemName then
@@ -68,7 +70,6 @@ local function planRecursive(itemName, amount, parentId, state)
     }
   }
 
-  state.tasks[taskId] = task
 
   -- Link this task to its parent
   if parentId and state.tasks[parentId] then
@@ -82,36 +83,62 @@ local function planRecursive(itemName, amount, parentId, state)
 
   -- Loop through the recipes for this item to see if any can be crafted.
   for _, recipeName in pairs(allRecipes) do
-    local output = recipeBook.getOutput(recipeName)
-    local ingredientsPerCraft = recipeBook.getRequiredIngredients(recipeName)
+    if visited[recipeName] then
+      return "FAIL", "cycle deteced for recipe: " .. recipeName
+    else
+      local output = recipeBook.getOutput(recipeName)
+      local ingredientsPerCraft = recipeBook.getRequiredIngredients(recipeName)
+      local recipeOk = true
+      local resolvedIngredients = {}
+      for ingredient, count in pairs(ingredientsPerCraft) do
+        -- Handle tags
+        if ingredient:sub(1, 4) == "tag:" then
+          local tagName = ingredient:sub(5)
+          local tagItems = recipeBook.getTagItems(tagName)
+          local tagResolved = false
+          for _, actualItem in ipairs(tagItems or {}) do
+            local ingredientsNeeded = math.ceil((count * toCraft) / output)
+            local status, err = planRecursive(actualItem, ingredientsNeeded, taskId, state, visited)
+            if status ~= "FAIL" then
+              resolvedIngredients[ingredient] = actualItem
+              tagResolved = true
+              break
+            end
+          end
 
-    local recipeOk = true
-    for ingredient, count in pairs(ingredientsPerCraft) do
-      print(ingredient)
-      -- TODO handle tags here. Like tag:minecraft:planks
-      local ingredientsNeeded = math.ceil((count * toCraft) / output)
-      local status, error = planRecursive(ingredient, ingredientsNeeded, taskId, state)
-      if status == "FAIL" then
-        recipeOk = false
-        break
+          if not tagResolved then
+            recipeOk = false
+            break
+          end
+        else
+          local ingredientsNeeded = math.ceil((count * toCraft) / output)
+          local status, err = planRecursive(ingredient, ingredientsNeeded, taskId, state, visited)
+          if status == "FAIL" then
+            recipeOk = false
+            break
+          end
+          resolvedIngredients[ingredient] = ingredient
+        end
       end
-    end
 
-    if recipeOk then
-      -- Lock the to-be crafted items for the parent
-      table.insert(state.locks, {
-        taskId = parentId,
-        itemName = itemName,
-        amount = toCraft
-      })
+      if recipeOk then
+        -- Lock the to-be crafted items for the parent
+        table.insert(state.locks, {
+          taskId = parentId,
+          itemName = itemName,
+          amount = toCraft
+        })
 
-      task.work.recipeName = recipeName
+        task.work.recipeName = recipeName
+        task.work.resolvedIngredients = resolvedIngredients
+        state.tasks[taskId] = task
 
-      return "CRAFT", nil
+        return "CRAFT", nil
+      end
     end
   end
 
-  return "FAIL", "no recipe"
+  return "FAIL", "No possible recipe for: " .. itemName
 end
 
 local function splitOversizedTasks(state)
@@ -157,7 +184,6 @@ local function splitOversizedTasks(state)
           }
 
           for ingredient, amount in pairs(ingredientsPerCraft) do
-            print(ingredient, amount)
             table.insert(newLocks, {
               taskId = splitId,
               itemName = ingredient,
@@ -248,6 +274,7 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
+    print(task.id, textutils.serialise(task.work))
     taskQ.addTask(task)
   end
 

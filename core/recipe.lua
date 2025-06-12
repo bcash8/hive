@@ -93,12 +93,36 @@ local function shapedCraftingRequiredIngredients(recipe)
   return counts
 end
 
+local function smeltingRequiredIngredients(recipe)
+  local counts = {}
+  local item = recipe.ingredient.item or (recipe.ingredient.tag and ("tag:" .. recipe.ingredient.tag))
+  counts[item] = 1
+  return counts
+end
+
+local function shapelessCraftingRequiredIngredients(recipe)
+  local counts = {}
+  for _, ingredient in pairs(recipe.ingredients) do
+    local item = ingredient.item or (ingredient.tag and ("tag:" .. ingredient.tag))
+    counts[item] = 1
+  end
+  return counts
+end
+
 function RecipeBook.getRequiredIngredients(recipeName)
   local recipe = RecipeBook.get(recipeName)
   if not recipe then error("Unknown recipe: " .. recipeName) end
 
   if recipe.type == "minecraft:crafting_shaped" then
     return shapedCraftingRequiredIngredients(recipe)
+  elseif
+      recipe.type == "minecraft:smelting"
+      or recipe.type == "minecraft:blasting"
+      or recipe.type == "minecraft:smelting"
+  then
+    return smeltingRequiredIngredients(recipe)
+  elseif recipe.type == "minecraft:crafting_shapeless" then
+    return shapelessCraftingRequiredIngredients(recipe)
   end
 
   error("Unknown recipe type: " .. recipe.type)
@@ -114,6 +138,13 @@ function RecipeBook.getOutput(recipeName)
   if recipe.result then return recipe.result.count or 1 end
 
   error("Unknown output amount: " .. recipeName)
+end
+
+-- Tags
+function RecipeBook.getTagItems(tagName)
+  local items = tags[tagName]
+  if not items then error("Missing items for tag: " .. tagName) end
+  return items.values
 end
 
 return RecipeBook
