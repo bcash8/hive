@@ -3,6 +3,7 @@ local CraftingSystem = {}
 local storage = require("core.storage")
 local taskQ = require("core.queue")
 local recipeBook = require("core.recipe")
+local machines = require("core.machines")
 
 local function topologicalSort(tasks)
   local sorted = {}
@@ -81,8 +82,19 @@ local function planRecursive(itemName, amount, parentId, state, visited)
     return "FAIL", "No recipe for item: " .. itemName
   end
 
-  -- Loop through the recipes for this item to see if any can be crafted.
+  local recipesWithAvailableMachines = {}
   for _, recipeName in pairs(allRecipes) do
+    local recipeType = recipeBook.getType(recipeName)
+    print(recipeType)
+    if machines.exists(recipeType) then
+      table.insert(recipesWithAvailableMachines, recipeName)
+    end
+  end
+
+  print(itemName, textutils.serialise(recipesWithAvailableMachines))
+
+  -- Loop through the recipes for this item to see if any can be crafted.
+  for _, recipeName in pairs(recipesWithAvailableMachines) do
     if visited[recipeName] then
       return "FAIL", "cycle deteced for recipe: " .. recipeName
     else

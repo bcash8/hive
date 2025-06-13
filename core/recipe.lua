@@ -50,6 +50,12 @@ function RecipeBook.get(recipeName)
   return recipes[recipeName]
 end
 
+function RecipeBook.getType(recipeName)
+  local recipe = recipes[recipeName]
+  if not recipe then error("Unknown recipe: " .. recipeName) end
+  return recipe.type
+end
+
 function RecipeBook.addItemToItemsMap(item)
   items[item.name] = {
     name = item.name,

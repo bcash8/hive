@@ -22,6 +22,7 @@ local targets = {
     "core/recipe.lua",
     "core/server.lua",
     "core/storage.lua",
+    "core/machines.lua",
     "data/recipes.json",
     "data/recipePriority.json",
     "data/tags.json",
@@ -36,7 +37,7 @@ local targets = {
   }
 }
 
-local installDir = "hive/" .. target
+local installDir = "hive/"
 
 if not fs.exists(installDir) then
   fs.makeDir(installDir)

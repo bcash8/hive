@@ -1,9 +1,24 @@
 local taskQ = require("core.queue")
 local storage = require("core.storage")
+local machines = require("core.machines")
 local handlers = {}
-local peripheralMap = {}
 local messageQueue = {}
 local MODEM_SIDE = "back"
+
+local function buildPeripheralMap()
+  local map = {}
+  for _, name in ipairs(peripheral.getNames()) do
+    if peripheral.getType(name) == "turtle" then
+      local ok, id = pcall(peripheral.call, name, "getID")
+      if ok and id then
+        map[id] = name
+      end
+    end
+  end
+  return map
+end
+
+local peripheralMap = buildPeripheralMap()
 
 function handlers.request_task(_, message)
   local task = taskQ.getNextReadyTask(message.workType)
@@ -55,14 +70,18 @@ function handlers.return_materials(senderId, message)
   return { type = "materials_returned" }
 end
 
-local function mapPeripaherals()
-  local list = peripheral.getNames()
-  for _, name in pairs(list) do
-    if peripheral.getType(name) == "turtle" then
-      local id = peripheral.call(name, "getID")
-      peripheralMap[id] = name
-    end
+function handlers.register_machine(senderId, message)
+  if type(message.machineType) ~= "string" then
+    return { type = "error", error = "Missing Machine Type" }
   end
+
+  local peripheralName = peripheralMap[senderId]
+  if not peripheralName then
+    return { type = "error", error = "Unknown ID" }
+  end
+
+  machines.register(message.machineType, peripheralName)
+  return { type = "registered", }
 end
 
 -- Generic message handler
@@ -101,13 +120,15 @@ end
 
 local function startListener()
   rednet.open(MODEM_SIDE)
-  mapPeripaherals()
   print("Task Queue Server running")
 
   while true do
     local id, message, protocol = rednet.receive()
-    local response = handleMessage(id, message)
-    rednet.send(id, response, protocol)
+    if message then
+      table.insert(messageQueue, { id = id, message = message, protocol = protocol })
+    end
+
+    sleep(0.05)
   end
 end
 
