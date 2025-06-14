@@ -84,6 +84,12 @@ function handlers.register_machine(senderId, message)
   return { type = "registered", }
 end
 
+function handlers.heartbeat(senderId, message)
+  local machineId = peripheralMap[senderId]
+  if not machineId then return { type = "error", error = "Unknown machine" } end
+  machines.heartbeat(machineId)
+end
+
 -- Generic message handler
 local function handleMessage(id, message)
   if type(message) ~= "table" or not message.type then
@@ -113,7 +119,7 @@ local function processMessages()
       local response = handleMessage(entry.id, entry.message)
       rednet.send(entry.id, response, entry.protocol)
     else
-      sleep(0.5)
+      sleep(0.1)
     end
   end
 end

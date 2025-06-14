@@ -1,6 +1,7 @@
 local storage = require("core.storage")
 local crafter = require("core.crafter")
 local server = require("core.server")
+local machines = require("core.machines")
 storage.scanAll()
 
 local function main()
@@ -9,4 +10,4 @@ local function main()
   crafter.request("minecraft:piston", 17, function() print("Crafting complete minecraft:stick") end)
 end
 
-parallel.waitForAll(function() server.runServer() end, main)
+parallel.waitForAll(server.runServer, machines.cleanup, main)

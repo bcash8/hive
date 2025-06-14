@@ -16,6 +16,8 @@ function Worker.new(id)
   self.task = nil
   self.messageQueue = {}
   self.listeners = {}
+  self.machineType = nil
+  self.registered = false
   return self
 end
 
@@ -122,6 +124,26 @@ function Worker:requestTask()
   return false
 end
 
+function Worker:heartbeat()
+  while true do
+    if not self.registered then
+      local response = self:sendAndWait({ type = "register_machines", self.machineType }, 2, 10)
+      if response == nil then
+        print("Unable to register")
+      else
+        self.registered = true
+      end
+    else
+      local response = self:sendAndWait({ type = "heartbeat" })
+      if not response then
+        print("Connection lost to server.")
+        self.registered = false
+      end
+    end
+    sleep(5)
+  end
+end
+
 function Worker:run()
   local function listener()
     print("Starting Listener")
@@ -153,7 +175,7 @@ function Worker:run()
     end
   end
 
-  parallel.waitForAny(listener, mainLoop)
+  parallel.waitForAny(listener, mainLoop, function() self:heartbeat() end)
 end
 
 return Worker
