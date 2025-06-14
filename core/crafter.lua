@@ -71,6 +71,7 @@ local function planRecursive(itemName, amount, parentId, state, visited)
     }
   }
 
+  state.tasks[taskId] = task
 
   -- Link this task to its parent
   if parentId and state.tasks[parentId] then
@@ -87,6 +88,7 @@ local function planRecursive(itemName, amount, parentId, state, visited)
     local recipeType = recipeBook.getType(recipeName)
     print(recipeType)
     if machines.exists(recipeType) then
+      print("Machine found for: " .. recipeType)
       table.insert(recipesWithAvailableMachines, recipeName)
     end
   end
@@ -141,9 +143,13 @@ local function planRecursive(itemName, amount, parentId, state, visited)
           amount = toCraft
         })
 
+        task.work.recipe = recipeBook.get(recipeName)
+        task.work.recipe.meta = {
+          output = output,
+          ingredientsPerCraft = ingredientsPerCraft,
+          resolvedIngredients = resolvedIngredients
+        }
         task.work.recipeName = recipeName
-        task.work.resolvedIngredients = resolvedIngredients
-        state.tasks[taskId] = task
 
         return "CRAFT", nil
       end
@@ -175,6 +181,7 @@ local function splitOversizedTasks(state)
       local numberOfBatchesRequired = math.ceil(craftsNeeded / smallestStackSize)
 
       if numberOfBatchesRequired > 1 then
+        local recipe = task.work.recipe
         splitMap[task.id] = {}
         local remainingToCraft = count
         for i = 1, numberOfBatchesRequired do
@@ -189,6 +196,7 @@ local function splitOversizedTasks(state)
               type = "CRAFT",
               item = task.work.item,
               count = actualAmount,
+              recipe = recipe,
               recipeName = recipeName
             },
             prereqs = { unpack(task.prereqs or {}) },
@@ -220,6 +228,7 @@ local function splitOversizedTasks(state)
   -- Rewire prereqs
   for _, task in pairs(newTasks) do
     if task.prereqs then
+      print(task.id, textutils.serialise(task.prereqs))
       local newPrereqs = {}
       for _, prereqId in pairs(task.prereqs) do
         if splitMap[prereqId] then
@@ -286,7 +295,7 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
-    print(task.id, textutils.serialise(task.work))
+    print(task.id, textutils.serialise(task.prereqs), task.work.recipeName)
     taskQ.addTask(task)
   end
 

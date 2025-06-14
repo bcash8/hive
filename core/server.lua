@@ -88,6 +88,7 @@ function handlers.heartbeat(senderId, message)
   local machineId = peripheralMap[senderId]
   if not machineId then return { type = "error", error = "Unknown machine" } end
   machines.heartbeat(machineId)
+  return { type = "success" }
 end
 
 -- Generic message handler

@@ -127,14 +127,15 @@ end
 function Worker:heartbeat()
   while true do
     if not self.registered then
-      local response = self:sendAndWait({ type = "register_machines", self.machineType }, 2, 10)
+      local response = self:sendAndWait({ type = "register_machine", machineType = self.machineType }, 2, 10)
       if response == nil then
         print("Unable to register")
       else
+        print("Successfully Registered")
         self.registered = true
       end
     else
-      local response = self:sendAndWait({ type = "heartbeat" })
+      local response = self:sendAndWait({ type = "heartbeat" }, 3, 2)
       if not response then
         print("Connection lost to server.")
         self.registered = false
@@ -164,7 +165,7 @@ function Worker:run()
 
   local function mainLoop()
     while true do
-      if self.status == "IDLE" then
+      if self.status == "IDLE" and self.registered then
         self:requestTask()
       elseif self.status == "WORKING" then
         self:performTask()

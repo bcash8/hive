@@ -6,40 +6,40 @@ local recipes = {}
 local itemRecipes = {}
 local tags = {}
 
-if fs.exists("hive/server/data/items.json") then
-  local file = fs.open("hive/server/data/items.json", "r")
+if fs.exists("hive/data/items.json") then
+  local file = fs.open("hive/data/items.json", "r")
   local contents = file.readAll()
   items = json.decode(contents)
   file.close()
 else
-  error("Missing hive/server/data/items.json file.")
+  error("Missing hive/data/items.json file.")
 end
 
-if fs.exists("hive/server/data/recipes.json") then
-  local file = fs.open("hive/server/data/recipes.json", "r")
+if fs.exists("hive/data/recipes.json") then
+  local file = fs.open("hive/data/recipes.json", "r")
   local contents = file.readAll()
   recipes = json.decode(contents)
   file.close()
 else
-  error("Missing hive/server/data/recipes.json file.")
+  error("Missing hive/data/recipes.json file.")
 end
 
-if fs.exists("hive/server/data/tags.json") then
-  local file = fs.open("hive/server/data/tags.json", "r")
+if fs.exists("hive/data/tags.json") then
+  local file = fs.open("hive/data/tags.json", "r")
   local contents = file.readAll()
   tags = json.decode(contents)
   file.close()
 else
-  error("Missing hive/server/data/tags.json file.")
+  error("Missing hive/data/tags.json file.")
 end
 
-if fs.exists("hive/server/data/recipePriority.json") then
-  local file = fs.open("hive/server/data/recipePriority.json", "r")
+if fs.exists("hive/data/recipePriority.json") then
+  local file = fs.open("hive/data/recipePriority.json", "r")
   local contents = file.readAll()
   itemRecipes = json.decode(contents)
   file.close()
 else
-  error("Missing hive/server/data/recipePriority.json file.")
+  error("Missing hive/data/recipePriority.json file.")
 end
 
 function RecipeBook.getRecipes(itemName)

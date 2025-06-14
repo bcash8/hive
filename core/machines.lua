@@ -5,7 +5,7 @@ local machineDetails = {}
 
 local recipeTypeToMachineType = {
   ["minecraft:crafting_shaped"] = { "crafting_turtle" },
-  ["minecraft:crafting_shapless"] = { "crafting_turtle" },
+  ["minecraft:crafting_shapeless"] = { "crafting_turtle" },
   ["minecraft:smelting"] = { "minecraft:furnace" },
   ["minecraft:blasting"] = { "minecraft:blast_furnace" },
   ["minecraft:smoking"] = { "minecraft:smoker" },
@@ -21,10 +21,13 @@ function Machines.register(machineType, machineId)
 end
 
 function Machines.exists(recipeType)
-  local machineType = recipeTypeToMachineType[recipeType]
-  if not machineType then error("No known machines for recipe type: " .. recipeType) end
-  local machines = machineRegistry[machineType]
-  return machines ~= nil and #machines > 0
+  print(textutils.serialise(machineRegistry))
+  local machineTypes = recipeTypeToMachineType[recipeType]
+  if not machineTypes then error("No known machines for recipe type: " .. recipeType) end
+  for _, machineType in pairs(machineTypes) do
+    if machineRegistry[machineType] and #machineRegistry[machineType] > 0 then return true end
+  end
+  return false;
 end
 
 function Machines.getMachines(machineType)

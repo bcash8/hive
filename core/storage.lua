@@ -155,7 +155,8 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
       or StorageManager.countItem(itemName, taskId) < count
   then
     print("[STORAGE] TaskId: " ..
-      taskId .. " requesting: " .. count .. " available: " .. StorageManager.countItem(itemName, taskId))
+      taskId ..
+      " requesting: " .. itemName .. " " .. count .. " available: " .. StorageManager.countItem(itemName, taskId))
     return false
   end
 
