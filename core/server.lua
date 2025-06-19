@@ -20,8 +20,15 @@ end
 
 local peripheralMap = buildPeripheralMap()
 
+local craftingWorkTypes = { "minecraft:crafting_shaped", "minecraft:crafting_shapeless" }
 function handlers.request_task(_, message)
-  local task = taskQ.getNextReadyTask(message.workType)
+  local task = nil
+  if message.workType == "CRAFT" then
+    for _, workType in pairs(craftingWorkTypes) do
+      task = taskQ.getNextReadyTask(workType)
+      if task then break end
+    end
+  end
   if task then
     return { type = "task", task = task }
   else
@@ -95,10 +102,6 @@ end
 local function handleMessage(id, message)
   if type(message) ~= "table" or not message.type then
     return { error = "Invalid message format" }
-  end
-
-  if message.type ~= "request_task" then
-    print(id, message.type)
   end
 
   local handler = handlers[message.type]

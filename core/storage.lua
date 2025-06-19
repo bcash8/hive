@@ -95,7 +95,6 @@ function StorageManager.countItem(itemName, taskId)
 end
 
 function StorageManager.lockItem(itemName, count, taskId)
-  print("[STORAGE]: Locking Items:", itemName, count, taskId)
   if StorageManager.countItem(itemName) < count then
     return false
   end

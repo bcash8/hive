@@ -72,5 +72,5 @@ function extractRecipeOutput(recipe) {
 }
 
 main().then((recipes) => {
-  fs.writeFile("../data/recipePriorites.json", JSON.stringify(recipes));
+  fs.writeFile("../data/recipePriority.json", JSON.stringify(recipes));
 });

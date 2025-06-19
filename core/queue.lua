@@ -3,27 +3,13 @@ local TaskQueue = {}
 local tasks = {}
 local readyQueue = {}
 
---[[
-  {
-    [taskId] = {
-      id = taskId,
-      prereqs = {prereq1, prereq2},
-      dependents = {dep1, dep2},
-      ready = false,
-      work = {
-        type: "CRAFT",
-        **crafting info**
-      }
-    }
-  }
-]] --
-
 function TaskQueue.addTask(task)
   task.id = task.id or TaskQueue.generateId()
   task.ready = (#task.prereqs == 0)
   tasks[task.id] = task
 
   if task.ready then
+    print(task.work.type)
     readyQueue[task.work.type] = readyQueue[task.work.type] or {}
     table.insert(readyQueue[task.work.type], task.id)
   end

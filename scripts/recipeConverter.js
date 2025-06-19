@@ -4,12 +4,20 @@ const recipeDir = "C:/Users/benja/Desktop/New folder/recipes";
 const tagDir = "C:/Users/benja/Desktop/New folder/tags";
 const itemsFile = "C:/Users/benja/Desktop/New folder/items/items.json";
 
+export const recipesToExclude = [
+  "iron_nugget_from_smelting",
+  "iron_nugget_from_blasting",
+  "gold_nugget_from_smelting",
+  "gold_nugget_from_blasting",
+];
+
 async function recipesToJSON() {
   const recipeData = {};
   const files = await fs.readdir(recipeDir);
   for (const file of files) {
     const filePath = path.join(recipeDir, file);
     const recipeName = path.basename(file, ".json");
+    if (recipesToExclude.includes(recipeName)) continue;
     const data = await fs.readFile(filePath, "utf8");
     recipeData[recipeName] = JSON.parse(data);
   }

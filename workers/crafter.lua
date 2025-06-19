@@ -39,7 +39,6 @@ local function craftShapedRecipe(recipe, toCraft)
     width = math.max(width, #row)
   end
   local height = #pattern
-  print(width, height)
 
   -- For each pattern row/col, map to the correct turtle slot
   for row = 1, height do
@@ -60,33 +59,33 @@ local function craftShapedRecipe(recipe, toCraft)
     table.insert(itemToSlot[item], slot)
   end
 
-  -- TODO Fix this logic
   local function moveItemToCorrectSlot(fromSlot)
-    turtle.select(fromSlot)
     local fromDetails = turtle.getItemDetail(fromSlot)
     if not fromDetails then return end
     local slotsForItem = itemToSlot[fromDetails.name]
-    local toMove = math.max(0, fromDetails.count - itemsPerSlot)
+    local toMove = fromDetails.count
     if toMove < 0 then return end
 
     for _, slot in pairs(slotsForItem) do
+      if toMove <= 0 then return end
       local toSlotDetails = turtle.getItemDetail(slot)
       if toSlotDetails then
         if toSlotDetails.name == fromDetails.name then
           local canMove = math.max(0, itemsPerSlot - toSlotDetails.count)
           local realMoveAmount = math.min(toMove, canMove)
+          turtle.select(fromSlot)
           turtle.transferTo(slot, realMoveAmount)
           toMove = toMove - realMoveAmount
         else
           moveToBufferSlot(slot)
           turtle.select(fromSlot)
           turtle.transferTo(slot, toMove)
-          return
+          toMove = 0
         end
       else
         turtle.select(fromSlot)
-        turtle.transferTo(slot, toMove)
-        return
+        turtle.transferTo(slot, itemsPerSlot)
+        toMove = toMove - itemsPerSlot
       end
     end
   end

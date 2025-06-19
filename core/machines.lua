@@ -21,7 +21,6 @@ function Machines.register(machineType, machineId)
 end
 
 function Machines.exists(recipeType)
-  print(textutils.serialise(machineRegistry))
   local machineTypes = recipeTypeToMachineType[recipeType]
   if not machineTypes then error("No known machines for recipe type: " .. recipeType) end
   for _, machineType in pairs(machineTypes) do
