@@ -1,7 +1,7 @@
 local Worker = {}
 Worker.__index = Worker
 
-local SERVER_ID = 2
+local SERVER_ID = nil
 local PROTOCOL = "crafter_worker"
 local MODEM_SIDE = "LEFT"
 local PERIPHERAL_NAME = "turtle_8"
@@ -145,7 +145,23 @@ function Worker:heartbeat()
   end
 end
 
+function Worker:discoverServer()
+  while SERVER_ID == nil do
+    print("Attempting to find server")
+    rednet.broadcast({ type = "discover" }, "network_discovery")
+    local senderId, message, protocol = rednet.receive("network_discovery")
+    if type(message) == "table" then
+      if message.type and message.type == "ack" then
+        print("Server found with id: " .. senderId)
+        SERVER_ID = senderId
+      end
+    end
+    sleep(2)
+  end
+end
+
 function Worker:run()
+  self:discoverServer()
   local function listener()
     print("Starting Listener")
     while true do

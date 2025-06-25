@@ -71,7 +71,6 @@ local function planRecursive(itemName, amount, parentId, state, visited)
   }
 
   state.tasks[taskId] = task
-  print(taskId, itemName)
 
   local allRecipes = recipeBook.getRecipes(itemName)
   if not allRecipes then

@@ -120,8 +120,12 @@ local function processMessages()
   while true do
     if #messageQueue > 0 then
       local entry = table.remove(messageQueue, 1)
-      local response = handleMessage(entry.id, entry.message)
-      rednet.send(entry.id, response, entry.protocol)
+      if entry.protocol == "network_discovery" then
+        rednet.send(entry.id, { type = "ack" }, entry.protocol)
+      else
+        local response = handleMessage(entry.id, entry.message)
+        rednet.send(entry.id, response, entry.protocol)
+      end
     else
       sleep(0.1)
     end
