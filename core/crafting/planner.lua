@@ -3,7 +3,7 @@ local Planner = {}
 local storage = require("core.storage")
 local taskQ = require("core.queue")
 local recipeBook = require("core.recipe")
-local machines = require("core.machines")
+local machines = require("core.machineRegistry")
 
 ---@param itemName string
 ---@param amount number

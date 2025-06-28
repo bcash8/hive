@@ -1,6 +1,6 @@
 local taskQ = require("core.queue")
 local storage = require("core.storage")
-local machines = require("core.machines")
+local machines = require("core.machineRegistry")
 local handlers = {}
 local messageQueue = {}
 local MODEM_SIDE = "back"
