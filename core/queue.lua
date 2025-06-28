@@ -16,6 +16,18 @@ function TaskQueue.addTask(task)
   return task.id
 end
 
+function TaskQueue.requeue(taskId)
+  local task = tasks[taskId]
+  if not task or not task.ready then return end
+
+  local queue = readyQueue[task.work.type]
+  if not queue then
+    readyQueue[task.work.type] = { taskId }
+  else
+    table.insert(queue, taskId)
+  end
+end
+
 function TaskQueue.markDone(taskId)
   local task = tasks[taskId]
   if not task then return end

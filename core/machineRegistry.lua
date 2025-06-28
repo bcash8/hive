@@ -1,5 +1,7 @@
-local MachineRegistry = {}
+local implementations = require("machines.implementations")
+local taskQ = require("core.queue")
 
+local MachineRegistry = {}
 local machines = {}
 local machineDetails = {}
 
@@ -16,7 +18,8 @@ function MachineRegistry.register(machineType, machineId)
   table.insert(machines[machineType], machineId)
   machineDetails[machineId] = {
     type = machineType,
-    heartbeat = os.time()
+    heartbeat = os.time(),
+    busy = false
   }
 end
 
@@ -72,8 +75,61 @@ function MachineRegistry.cleanup()
   end
 end
 
-function MachineRegistry.runManager()
+function MachineRegistry.getSupportedRecipeTypes()
+  local recipeTypes = {}
+  for _, impl in pairs(implementations) do
+    if impl.supportedRecipeTypes then
+      for _, recipeType in pairs(impl.supportedRecipeTypes) do
+        recipeTypes[recipeType] = true
+      end
+    end
+  end
+  return recipeTypes
+end
 
+local function findAvailableMachine(recipeType)
+  for machineType, impl in pairs(implementations) do
+    if impl.supportsRecipeType and impl.supportsRecipeType(recipeType) then
+      local machines = MachineRegistry.getMachines(machineType)
+      for machineId, detail in pairs(machineDetails) do
+        if not detail.busy then
+          return machineId, impl
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
+function MachineRegistry.runManager()
+  while true do
+    local didWork = false
+    for recipeType, _ in pairs(MachineRegistry.getSupportedRecipeTypes()) do
+      while taskQ.hasWork(recipeType) do
+        local task = taskQ.getNextReadyTask(recipeType)
+        if not task then break end
+
+        local machineId, impl = findAvailableMachine(recipeType)
+        if machineId and impl and impl.runTask and machineDetails[machineId] then
+          machineDetails[machineId].busy = true
+          didWork = true
+
+          -- Run the task in the background
+          impl.runTask(machineId, task, function()
+            if machineDetails[machineId] then machineDetails[machineId].busy = false end
+            taskQ.markDone(task.id)
+          end)
+        else
+          taskQ.requeue(task.id)
+          break
+        end
+      end
+    end
+
+    if not didWork then
+      sleep(1)
+    end
+  end
 end
 
 return MachineRegistry
