@@ -17,12 +17,14 @@ local base = "https://raw.githubusercontent.com/bcash8/hive/" .. branch .. "/"
 
 local targets = {
   server = {
-    "core/crafter.lua",
+    "core/crafting/craftingSystem.lua",
+    "core/crafting/planner.lua",
+    "core/crafting/splitters.lua",
     "core/queue.lua",
     "core/recipe.lua",
     "core/server.lua",
     "core/storage.lua",
-    "core/machines.lua",
+    "core/machineRegistry.lua",
     "data/recipes.json",
     "data/recipePriority.json",
     "data/tags.json",

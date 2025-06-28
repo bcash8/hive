@@ -1,6 +1,6 @@
-local Machines = {}
+local MachineRegistry = {}
 
-local machineRegistry = {}
+local machines = {}
 local machineDetails = {}
 
 local recipeTypeToMachineType = {
@@ -11,48 +11,48 @@ local recipeTypeToMachineType = {
   ["minecraft:smoking"] = { "minecraft:smoker" },
 }
 
-function Machines.register(machineType, machineId)
-  machineRegistry[machineType] = machineRegistry[machineType] or {}
-  table.insert(machineRegistry[machineType], machineId)
+function MachineRegistry.register(machineType, machineId)
+  machines[machineType] = machines[machineType] or {}
+  table.insert(machines[machineType], machineId)
   machineDetails[machineId] = {
     type = machineType,
     heartbeat = os.time()
   }
 end
 
-function Machines.exists(recipeType)
+function MachineRegistry.exists(recipeType)
   local machineTypes = recipeTypeToMachineType[recipeType]
   if not machineTypes then error("No known machines for recipe type: " .. recipeType) end
   for _, machineType in pairs(machineTypes) do
-    if machineRegistry[machineType] and #machineRegistry[machineType] > 0 then return true end
+    if machines[machineType] and #machines[machineType] > 0 then return true end
   end
   return false;
 end
 
-function Machines.getMachines(machineType)
-  return machineRegistry[machineType] or {}
+function MachineRegistry.getMachines(machineType)
+  return machines[machineType] or {}
 end
 
-function Machines.discoverPeripherals()
+function MachineRegistry.discoverPeripherals()
   for _, name in ipairs(peripheral.getNames()) do
     local pType = peripheral.getType(name)
-    Machines.register(pType, name)
+    MachineRegistry.register(pType, name)
   end
 end
 
-function Machines.heartbeat(machineId)
+function MachineRegistry.heartbeat(machineId)
   local machine = machineDetails[machineId]
   if not machine then return end
   machine.heartbeat = os.time()
 end
 
-function Machines.cleanup()
+function MachineRegistry.cleanup()
   while true do
     local now = os.time()
     for machineId, details in pairs(machineDetails) do
       if now - details.heartbeat > 10 then
-        -- Remove from machineRegistry
-        local list = machineRegistry[details.type]
+        -- Remove from machines
+        local list = machines[details.type]
         if list then
           for i = #list, 1, -1 do
             if list[i] == machineId then
@@ -60,7 +60,7 @@ function Machines.cleanup()
             end
           end
           if #list == 0 then
-            machineRegistry[details.type] = nil
+            machines[details.type] = nil
           end
         end
 
@@ -72,4 +72,8 @@ function Machines.cleanup()
   end
 end
 
-return Machines
+function MachineRegistry.runManager()
+
+end
+
+return MachineRegistry
