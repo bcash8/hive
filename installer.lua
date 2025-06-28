@@ -29,6 +29,9 @@ local targets = {
     "data/recipePriority.json",
     "data/tags.json",
     "data/items.json",
+    "machines/blastFurnace.lua",
+    "machines/implementations.lua",
+    "machines/furnace.lua",
     "main.lua",
     "packages/json.lua"
   },
