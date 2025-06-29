@@ -36,6 +36,10 @@ function MachineRegistry.getMachines(machineType)
   return machines[machineType] or {}
 end
 
+function MachineRegistry.getMachineTypesForRecipeType(recipeType)
+  return recipeTypeToMachineType[recipeType]
+end
+
 function MachineRegistry.discoverPeripherals()
   for _, name in ipairs(peripheral.getNames()) do
     local pType = peripheral.getType(name)
@@ -85,6 +89,11 @@ function MachineRegistry.getSupportedRecipeTypes()
     end
   end
   return recipeTypes
+end
+
+function MachineRegistry.getMachineMetadata(machineType)
+  if not implementations[machineType] then return nil end
+  return implementations[machineType].meta
 end
 
 local function findAvailableMachine(recipeType)

@@ -53,10 +53,12 @@ function TaskQueue.markDone(taskId)
 end
 
 function TaskQueue.hasWork(workType)
+  if not readyQueue[workType] then return false end
   return #readyQueue[workType] > 0
 end
 
 function TaskQueue.length(workType)
+  if not readyQueue[workType] then return 0 end
   return #readyQueue[workType]
 end
 

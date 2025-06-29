@@ -110,7 +110,6 @@ function CraftingSystem.request(itemName, amount, onFinish)
   end
 
   for _, task in pairs(sortedTasks) do
-    -- print(task.id, textutils.serialise(task.prereqs), task.work.recipeName)
     taskQ.addTask(task)
   end
 

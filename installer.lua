@@ -20,6 +20,7 @@ local targets = {
     "core/crafting/craftingSystem.lua",
     "core/crafting/planner.lua",
     "core/crafting/splitters.lua",
+    "core/crafting/maps.lua",
     "core/queue.lua",
     "core/recipe.lua",
     "core/server.lua",
