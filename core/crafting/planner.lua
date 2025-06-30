@@ -88,12 +88,11 @@ function Planner.planRecursive(itemName, amount, parentId, state, visited)
 
         local visitKey = recipeName .. "|" .. itemName
         local branchVisited = copyVisited(visited)
-        branchVisited[visitKey] = true
-        if visited[visitKey] then
+        if branchVisited[visitKey] then
           return "FAIL", "Cycle detected: " .. visitKey
         end
 
-        visited[visitKey] = true
+        branchVisited[visitKey] = true
 
         local tempTask = makeTask(taskId, parentId, itemName, toCraft)
         tempTask.work.recipe = recipeBook.get(recipeName)
@@ -105,8 +104,8 @@ function Planner.planRecursive(itemName, amount, parentId, state, visited)
           resolvedIngredients = {},
           supplementalItems = {}
         }
-
         state.tasks[taskId] = tempTask
+
         local ok = true
 
         -- Ingredient Planning
@@ -115,65 +114,69 @@ function Planner.planRecursive(itemName, amount, parentId, state, visited)
           local needed = math.ceil((count * toCraft) / output)
 
           if ingredient:sub(1, 4) == "tag:" then
-            resolvedName = resolveTagItem(ingredient, needed, taskId, state, visited)
+            resolvedName = resolveTagItem(ingredient, needed, taskId, state, branchVisited)
             if not resolvedName then
               ok = false
               break
             end
           else
-            local status = Planner.planRecursive(ingredient, needed, taskId, state, visited)
+            local status = Planner.planRecursive(ingredient, needed, taskId, state, branchVisited)
             if status == "FAIL" then
               ok = false
               break
             end
           end
+
           tempTask.work.recipe.meta.resolvedIngredients[ingredient] = resolvedName
         end
 
-        -- Supplemental Planning
-        for _, supplement in ipairs(supplementalItems) do
-          local supplementalItemMetadata = {}
-          if supplement.item:sub(1, 4) == "map:" then
-            -- Maps from the recipe book.
-            local mapName = supplement.item:sub(5)
-            if not maps[mapName] then
-              ok = false
-              break
-            end
-            local rankedItemList = maps[mapName](itemName, toCraft * supplement.perCraft, taskId, state, visited)
-            -- validate that one of the items exists
-            ok = false
-            for item, amount in pairs(rankedItemList) do
-              print(item, amount)
-              local status = Planner.planRecursive(item, amount, taskId, state, visited)
-              if status ~= "FAIL" then
-                ok = true
-                supplementalItemMetadata = {
-                  item = item,
-                  amount = amount
-                }
+        if ok then
+          -- Supplemental Planning
+          for _, supplement in ipairs(supplementalItems) do
+            local supplementalItemMetadata = {}
+            if supplement.item:sub(1, 4) == "map:" then
+              -- Maps from the recipe book.
+              local mapName = supplement.item:sub(5)
+              if not maps[mapName] then
+                ok = false
                 break
               end
-            end
-          else
-            local status = Planner.planRecursive(
-              supplement.item,
-              supplement.perCraft * toCraft,
-              taskId,
-              state,
-              visited
-            )
-            if status == "FAIL" then
+              local rankedItemList = maps[mapName](itemName, toCraft * supplement.perCraft, taskId, state, branchVisited)
+              -- validate that one of the items exists
               ok = false
-              break
+              for item, amount in pairs(rankedItemList) do
+                local status, err = Planner.planRecursive(item, amount, taskId, state, branchVisited)
+                if status ~= "FAIL" then
+                  ok = true
+                  supplementalItemMetadata = {
+                    item = item,
+                    amount = amount
+                  }
+                  break
+                end
+              end
+            else
+              local status = Planner.planRecursive(
+                supplement.item,
+                supplement.perCraft * toCraft,
+                taskId,
+                state,
+                branchVisited
+              )
+              if status == "FAIL" then
+                ok = false
+                break
+              end
+              supplementalItemMetadata = {
+                item = supplement.item,
+                amount = supplement.perCraft
+              }
             end
-            supplementalItemMetadata = {
-              item = supplement.item,
-              amount = supplement.perCraft
-            }
+
+            tempTask.work.recipe.meta.supplementalItems[supplement.item] = supplementalItemMetadata
           end
-          tempTask.work.recipe.meta.supplementalItems[supplement.item] = supplementalItemMetadata
         end
+
 
         if ok then
           table.insert(state.locks, {
@@ -181,12 +184,18 @@ function Planner.planRecursive(itemName, amount, parentId, state, visited)
             itemName = itemName,
             amount = toCraft
           })
-          state.tasks[taskId] = tempTask
           if parentId and state.tasks[parentId] then
             table.insert(state.tasks[parentId].prereqs, taskId)
           end
 
           return "CRAFT", nil
+        else
+          state.tasks[taskId] = nil
+          for i = #state.locks, 1, -1 do
+            if state.locks[i].taskId == taskId then
+              table.remove(state.locks, i)
+            end
+          end
         end
       end
     end

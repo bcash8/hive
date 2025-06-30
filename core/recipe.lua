@@ -42,12 +42,21 @@ else
   error("Missing hive/data/recipePriority.json file.")
 end
 
+local function deepCopy(tbl)
+  if type(tbl) ~= "table" then return tbl end
+  local copy = {}
+  for k, v in pairs(tbl) do
+    copy[k] = deepCopy(v)
+  end
+  return copy
+end
+
 function RecipeBook.getRecipes(itemName)
-  return itemRecipes[itemName]
+  return deepCopy(itemRecipes[itemName])
 end
 
 function RecipeBook.get(recipeName)
-  return recipes[recipeName]
+  return deepCopy(recipes[recipeName])
 end
 
 function RecipeBook.getType(recipeName)
@@ -119,19 +128,23 @@ function RecipeBook.getRequiredIngredients(recipeName)
   local recipe = RecipeBook.get(recipeName)
   if not recipe then error("Unknown recipe: " .. recipeName) end
 
+  local ingredients = nil
+
   if recipe.type == "minecraft:crafting_shaped" then
-    return shapedCraftingRequiredIngredients(recipe)
+    ingredients = shapedCraftingRequiredIngredients(recipe)
   elseif
       recipe.type == "minecraft:smelting"
       or recipe.type == "minecraft:blasting"
       or recipe.type == "minecraft:smelting"
   then
-    return smeltingRequiredIngredients(recipe)
+    ingredients = smeltingRequiredIngredients(recipe)
   elseif recipe.type == "minecraft:crafting_shapeless" then
-    return shapelessCraftingRequiredIngredients(recipe)
+    ingredients = shapelessCraftingRequiredIngredients(recipe)
+  else
+    error("Unknown recipe type: " .. recipe.type)
   end
 
-  error("Unknown recipe type: " .. recipe.type)
+  return deepCopy(ingredients)
 end
 
 -- Outputs

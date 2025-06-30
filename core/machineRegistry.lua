@@ -100,8 +100,9 @@ local function findAvailableMachine(recipeType)
   for machineType, impl in pairs(implementations) do
     if impl.supportsRecipeType and impl.supportsRecipeType(recipeType) then
       local machines = MachineRegistry.getMachines(machineType)
-      for machineId, detail in pairs(machineDetails) do
-        if not detail.busy then
+      for _, machineId in pairs(machines) do
+        local detail = machineDetails[machineId]
+        if detail and not detail.busy then
           return machineId, impl
         end
       end

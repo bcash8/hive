@@ -148,7 +148,7 @@ function StorageManager.releaseAllLocks(taskId)
   end
 end
 
-function StorageManager.moveItem(itemName, count, destination, taskId)
+function StorageManager.moveItem(itemName, count, destination, taskId, toSlot)
   if inventoryCache[itemName] == nil
       or inventoryCache[itemName].locations == nil
       or StorageManager.countItem(itemName, taskId) < count
@@ -160,13 +160,12 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
   end
 
   local remaining = count
-
   -- First pull from partial stacks
   for inventoryName, slots in pairs(partialStacks[itemName] or {}) do
     for slot, _ in pairs(slots) do
       local amount = inventoryCache[itemName].locations[inventoryName][slot]
       local moveCount = math.min(amount, remaining)
-      local actualMovedCount = peripheral.call(inventoryName, "pushItems", destination, slot, moveCount)
+      local actualMovedCount = peripheral.call(inventoryName, "pushItems", destination, slot, moveCount, toSlot)
       if taskId then StorageManager.unlockItem(itemName, actualMovedCount, taskId) end
       remaining = remaining - actualMovedCount
 
@@ -198,7 +197,7 @@ function StorageManager.moveItem(itemName, count, destination, taskId)
   for inventoryName, slots in pairs(inventoryCache[itemName].locations or {}) do
     for slot, amount in pairs(slots) do
       local moveCount = math.min(amount, remaining)
-      local actualMovedCount = peripheral.call(inventoryName, "pushItems", destination, slot, moveCount)
+      local actualMovedCount = peripheral.call(inventoryName, "pushItems", destination, slot, moveCount, toSlot)
       if taskId then StorageManager.unlockItem(itemName, actualMovedCount, taskId) end
 
       remaining = remaining - actualMovedCount
